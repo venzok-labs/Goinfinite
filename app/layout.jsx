@@ -1,5 +1,7 @@
 import "./globals.css";
 import ScrollCompanion from "../components/ScrollCompanion";
+import { ContactProvider } from "../components/ContactContext";
+import ContactModal from "../components/ContactModal";
 
 export const metadata = {
   title: "Infinite Solutions — Engineering Intelligence. From Concept to Reality.",
@@ -17,7 +19,10 @@ export default function RootLayout({ children }) {
         />
       </head>
       <body>
-        {children}
+        <ContactProvider>
+          {children}
+          <ContactModal />
+        </ContactProvider>
         <ScrollCompanion />
       </body>
     </html>

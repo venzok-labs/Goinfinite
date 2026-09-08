@@ -1,11 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import styles from "./Counter.module.css";
 
 // Counts up from 0 to `value` once it scrolls into view, then gives the
 // number a brief "pop" (scale + color flash) the instant it lands.
-export default function Counter({ value, suffix = "", plain = false }) {
+export default function Counter({ value, suffix = "", plain = false, className = "" }) {
   const ref = useRef(null);
   const [display, setDisplay] = useState(plain ? "0" : "0");
   const [popped, setPopped] = useState(false);
@@ -47,7 +46,10 @@ export default function Counter({ value, suffix = "", plain = false }) {
   }, [value, suffix, plain]);
 
   return (
-    <b ref={ref} className={popped ? styles.pop : undefined}>
+    <b
+      ref={ref}
+      className={`${className} ${popped ? "animate-counter-pop motion-reduce:animate-none" : ""}`}
+    >
       {display}
     </b>
   );

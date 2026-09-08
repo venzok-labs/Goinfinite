@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import styles from "./ScrollGear.module.css";
 
 /*
  * A small companion version of the hero's wireframe model that appears
@@ -122,8 +121,13 @@ export default function ScrollGear({ sectionRef }) {
   if (failed) return null;
 
   return (
-    <div className={`${styles.badge} ${active ? styles.active : ""}`} aria-hidden="true">
-      <canvas ref={canvasRef} className={styles.canvas} />
+    <div
+      aria-hidden="true"
+      className={`pointer-events-none fixed right-7 bottom-7 z-40 h-[76px] w-[76px] rounded-full border border-line bg-white shadow-[0_12px_28px_-12px_rgba(11,42,74,0.35)] opacity-0 max-[760px]:hidden motion-reduce:transition-none transition-[opacity,transform] duration-[350ms] ease-out ${
+        active ? "translate-y-0 scale-100 opacity-100" : "translate-y-[10px] scale-90"
+      }`}
+    >
+      <canvas ref={canvasRef} className="block h-full w-full" />
     </div>
   );
 }
