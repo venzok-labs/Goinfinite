@@ -14,7 +14,7 @@ const INDUSTRIES = [
     key: "automotive",
     tag: "Automotive",
     name: "Automotive",
-    copy: "Product development, engineering measurement, CAE validation, manufacturing support, and component engineering.",
+    copy: "Product Development turns ideas into practical designs. CAE Validation digitally tests those designs for safety and performance. Engineering Measurement validates the results using physical prototypes. Component Engineering finalizes materials and dimensions, while Manufacturing Support prepares the components and tooling for high-volume production.",
     icon: "car",
     gradient: "linear-gradient(135deg, #0b2a4a, #1d6fbf)",
     image: undefined,
@@ -102,193 +102,221 @@ function IndustryIcon({ icon, className }) {
 
 const COUNT = INDUSTRIES.length;
 
+// One step per wheel gesture, not per pixel — while mid-transition, further
+// wheel ticks are swallowed so a single flick can't skip more than one card.
+const STEP_COOLDOWN_MS = 420;
+
 /*
- * Desktop: a single sticky two-column composition — the section is a tall
- * (COUNT * 100vh) spacer with the actual content pinned via `position:
- * sticky` inside it. Which industry is "active" is driven purely by scroll
- * position (no clicking required): a single passive scroll listener, batched
- * to one read/write per animation frame and only touching React state when
- * the active index actually changes — never on every pixel of scroll — plus
- * an IntersectionObserver that adds/removes that listener so it's only alive
- * while this section is anywhere near the viewport.
+ * Desktop: a fixed one-viewport-tall panel. Panel transitions only happen
+ * when the wheel event fires directly over the card stage (the `stageRef`
+ * element) — page scroll everywhere else, including the rest of this same
+ * section, is completely untouched. While stepping between cards 1..7 the
+ * wheel event's default action is prevented so the page itself doesn't move;
+ * once at the first or last card, scrolling further in that direction is
+ * simply let through (no preventDefault), so the page scrolls past the
+ * panel normally in either direction — it never gets "stuck."
  *
- * Mobile (≤900px): the sticky/scroll-linked version is skipped entirely —
- * this renders as a plain vertical list instead, each industry with its own
- * image/title/copy, one after another. Both versions are always in the DOM
- * (toggled with CSS, not JS) so there's no client/server hydration mismatch
- * and no layout flash on load.
+ * This intentionally replaces an earlier tall-spacer + `position: sticky` +
+ * scroll-progress version: that approach mapped a large pixel distance to
+ * each card change, which read as sluggish. There's no internal scrollable
+ * element here (no overflow:scroll container), so there's nothing that
+ * could show its own scrollbar.
+ *
+ * Mobile (≤900px): unaffected — still a plain vertical list, no wheel
+ * handling at all. Both versions are always in the DOM (toggled with CSS,
+ * not JS) so there's no hydration mismatch or layout flash on load.
  */
 export default function Industries() {
-  const wrapperRef = useRef(null);
+  const stageRef = useRef(null);
   const activeRef = useRef(0);
+  const lockedRef = useRef(false);
   const [active, setActive] = useState(0);
 
   useEffect(() => {
-    const wrapper = wrapperRef.current;
-    if (!wrapper) return;
+    const stage = stageRef.current;
+    if (!stage) return;
 
-    const desktopMq = window.matchMedia("(min-width: 901px)");
-    let listening = false;
-    let ticking = false;
-    let inView = false;
+    function onWheel(e) {
+      const dir = e.deltaY > 0 ? 1 : e.deltaY < 0 ? -1 : 0;
+      if (dir === 0) return;
 
-    function computeActive() {
-      ticking = false;
-      const rect = wrapper.getBoundingClientRect();
-      const scrollable = rect.height - window.innerHeight;
-      if (scrollable <= 0) return;
-      const progress = Math.min(1, Math.max(0, -rect.top / scrollable));
-      const next = Math.min(COUNT - 1, Math.floor(progress * COUNT));
-      if (next !== activeRef.current) {
-        activeRef.current = next;
-        setActive(next);
+      const atEnd = activeRef.current === COUNT - 1 && dir === 1;
+      const atStart = activeRef.current === 0 && dir === -1;
+      if (atEnd || atStart) {
+        // Boundary reached in this direction — let the page scroll past
+        // the panel normally instead of intercepting.
+        return;
       }
+
+      e.preventDefault();
+      if (lockedRef.current) return;
+
+      lockedRef.current = true;
+      const next = activeRef.current + dir;
+      activeRef.current = next;
+      setActive(next);
+      setTimeout(() => {
+        lockedRef.current = false;
+      }, STEP_COOLDOWN_MS);
     }
 
-    function onScroll() {
-      if (ticking) return;
-      ticking = true;
-      requestAnimationFrame(computeActive);
-    }
-
-    function startListening() {
-      if (listening || !desktopMq.matches) return;
-      listening = true;
-      window.addEventListener("scroll", onScroll, { passive: true });
-      computeActive();
-    }
-    function stopListening() {
-      if (!listening) return;
-      listening = false;
-      window.removeEventListener("scroll", onScroll);
-    }
-
-    const io = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          inView = entry.isIntersecting;
-          if (inView) startListening();
-          else stopListening();
-        });
-      },
-      { rootMargin: "200px 0px 200px 0px" }
-    );
-    io.observe(wrapper);
-
-    function onMqChange() {
-      if (!desktopMq.matches) {
-        stopListening();
-        activeRef.current = 0;
-        setActive(0);
-      } else if (inView) {
-        startListening();
-      }
-    }
-    desktopMq.addEventListener("change", onMqChange);
-
-    return () => {
-      io.disconnect();
-      stopListening();
-      desktopMq.removeEventListener("change", onMqChange);
-    };
+    stage.addEventListener("wheel", onWheel, { passive: false });
+    return () => stage.removeEventListener("wheel", onWheel);
   }, []);
 
   return (
     <section id="industries">
-      <div className="wrap">
+      {/* Mobile-only intro — on desktop this same copy lives inside the
+          pinned panel's static left column instead (see below), since that
+          column never moves while the cards behind it change. */}
+      <div className="wrap hidden max-[900px]:block">
         <Reveal className="sec-head">
           <div className="eyebrow">Industries we serve</div>
           <h2 className="text-[32px]">Engineering Experience Across Industries</h2>
           <p className="max-w-[60ch] text-base">
-            Different engineering environments call for different judgement — our experience
-            spans the following sectors.
+            Our industry experience shows we understand different engineering environments — not
+            just different logos.
           </p>
         </Reveal>
       </div>
 
-      {/* ---------- Desktop: sticky scroll-driven story ---------- */}
-      <div
-        ref={wrapperRef}
-        style={{ height: `${COUNT * 100}vh` }}
-        className="relative hidden min-[901px]:block"
-      >
-        <div className="sticky top-0 flex h-screen flex-col justify-center overflow-hidden">
-          <div className="wrap grid grid-cols-[42%_58%] items-center gap-16 max-[1100px]:gap-10">
-            {/* LEFT — text stack: all steps occupy the same grid cell so the
-                column auto-sizes to the tallest one and swapping the active
-                step never shifts the layout. */}
-            <div>
-              <div className="grid">
-                {INDUSTRIES.map((ind, i) => (
-                  <div
-                    key={ind.key}
-                    aria-hidden={i !== active}
-                    className={`col-start-1 row-start-1 transition-[opacity,transform] duration-500 ease-out motion-reduce:transition-none motion-reduce:duration-0 ${
-                      i === active
-                        ? "translate-y-0 opacity-100"
-                        : i < active
-                        ? "-translate-y-3 opacity-0"
-                        : "translate-y-3 opacity-0"
-                    }`}
-                  >
-                    <span className="font-mono text-xs font-semibold uppercase tracking-[0.14em] text-blue">
-                      Sector {String(i + 1).padStart(2, "0")}
-                    </span>
-                    <h3 className="mt-3 text-[clamp(28px,2.2vw+14px,42px)] text-navy">{ind.name}</h3>
-                    <p className="mt-4 max-w-[46ch] text-[15.5px] leading-[1.65] text-steel">
-                      {ind.copy}
-                    </p>
-                  </div>
-                ))}
-              </div>
+      {/* ---------- Desktop: fixed-height panel, wheel-driven story ---------- */}
+      <div className="relative hidden h-screen min-[901px]:flex flex-col justify-center overflow-hidden bg-[#0c1826]">
+        {/* Faint background texture — the panel is much taller than the
+            content it holds, so this keeps the surrounding dark space from
+            reading as empty rather than deliberate. */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 opacity-[0.05] bg-[repeating-linear-gradient(45deg,#ffffff_0px,#ffffff_1px,transparent_1px,transparent_28px)]"
+        />
 
-              {/* progress — present but deliberately understated */}
-              <div className="mt-10 flex items-center gap-4">
+        <div className="wrap grid grid-cols-[36%_64%] items-center gap-14 max-[1100px]:gap-10">
+            {/* LEFT — static text plus a full jump-to-any-industry list, so
+                the column doesn't run out of content halfway down. Clicking
+                a row jumps straight to it (independent of the wheel stepper
+                on the stage). */}
+            <div>
+              <div className="font-mono text-xs font-semibold uppercase tracking-[0.14em] text-[#6fe3c9]">
+                Industries we serve
+              </div>
+              <h2 className="mt-3.5 text-[clamp(26px,2.2vw+14px,36px)] leading-[1.15] text-white">
+                Engineering Experience Across Industries
+              </h2>
+              <p className="mt-4 max-w-[40ch] text-[15px] leading-[1.65] text-[#a9bbd0]">
+                Our industry experience shows we understand different engineering environments —
+                not just different logos.
+              </p>
+
+              <ul className="mt-9 flex flex-col border-t border-white/10">
+                {INDUSTRIES.map((ind, i) => (
+                  <li key={ind.key} className="border-b border-white/10">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        activeRef.current = i;
+                        setActive(i);
+                      }}
+                      className="group flex w-full items-center gap-4 py-3 text-left"
+                    >
+                      <span
+                        className={`font-mono text-[11px] tabular-nums transition-colors duration-300 ${
+                          i === active ? "text-[#6fb3ff]" : "text-[#4d6178]"
+                        }`}
+                      >
+                        {String(i + 1).padStart(2, "0")}
+                      </span>
+                      <span
+                        className={`text-[14.5px] transition-colors duration-300 ${
+                          i === active
+                            ? "font-semibold text-white"
+                            : "text-[#7a93ad] group-hover:text-[#c3d3e3]"
+                        }`}
+                      >
+                        {ind.name}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+
+              <div className="mt-6 flex items-center gap-4">
                 <div className="flex items-center gap-1.5" aria-hidden="true">
                   {INDUSTRIES.map((ind, i) => (
                     <span
                       key={ind.key}
                       className={`h-1.5 rounded-full transition-all duration-500 motion-reduce:transition-none ${
-                        i === active ? "w-6 bg-blue" : "w-1.5 bg-line"
+                        i === active ? "w-6 bg-[#6fb3ff]" : "w-1.5 bg-white/15"
                       }`}
                     />
                   ))}
                 </div>
-                <span className="font-mono text-xs tracking-[0.08em] text-steel">
+                <span className="font-mono text-xs tracking-[0.08em] text-[#7a93ad]">
                   {String(active + 1).padStart(2, "0")} / {String(COUNT).padStart(2, "0")}
                 </span>
               </div>
             </div>
 
-            {/* RIGHT — image stack, absolutely layered and crossfaded */}
-            <div className="relative h-[min(58vh,520px)] w-full overflow-hidden rounded-[20px] border border-line shadow-[0_20px_44px_-20px_rgba(11,42,74,0.35)]">
-              {INDUSTRIES.map((ind, i) => (
-                <div
-                  key={ind.key}
-                  aria-hidden={i !== active}
-                  className={`absolute inset-0 transition-[opacity,transform] duration-700 ease-out motion-reduce:transition-none motion-reduce:duration-0 ${
-                    i === active ? "scale-100 opacity-100" : "scale-[1.04] opacity-0"
-                  }`}
-                  style={
-                    ind.image
-                      ? { backgroundImage: `url(${ind.image})`, backgroundSize: "cover", backgroundPosition: "center" }
-                      : { background: ind.gradient }
-                  }
-                  role="img"
-                  aria-label={`${ind.name} — illustration`}
-                >
-                  <span className="absolute left-6 top-6 flex h-11 w-11 items-center justify-center rounded-full border border-white/25 bg-white/10 text-white backdrop-blur-sm">
-                    <IndustryIcon icon={ind.icon} />
-                  </span>
-                  <span className="absolute bottom-6 left-6 font-mono text-[11px] uppercase tracking-[0.12em] text-white/75">
-                    {ind.tag}
-                  </span>
-                </div>
-              ))}
+            {/* RIGHT — one portrait card at a time, enlarged to dominate the
+                stage rather than float in empty space (no photography yet).
+                Upcoming cards peek behind it in a diagonal cascade, scaled
+                down; the previous card drops away. */}
+            <div
+              ref={stageRef}
+              className="relative flex h-[min(82vh,720px)] w-full items-center justify-center"
+            >
+              {INDUSTRIES.map((ind, i) => {
+                const d = i - active;
+                let transform = "translate(0,0) scale(1)";
+                let opacity = 1;
+                let z = 10;
+                if (d === 1) {
+                  transform = "translate(58px,-48px) scale(.87)";
+                  opacity = 0.7;
+                  z = 9;
+                } else if (d === 2) {
+                  transform = "translate(106px,-88px) scale(.76)";
+                  opacity = 0.4;
+                  z = 8;
+                } else if (d === 3) {
+                  transform = "translate(148px,-122px) scale(.66)";
+                  opacity = 0.18;
+                  z = 7;
+                } else if (d === -1) {
+                  transform = "translate(-42px,40px) scale(.94)";
+                  opacity = 0;
+                  z = 5;
+                } else if (d !== 0) {
+                  transform = `translate(${d > 0 ? 188 : -74}px, ${d > 0 ? -160 : 60}px) scale(.55)`;
+                  opacity = 0;
+                  z = 1;
+                }
+                return (
+                  <div
+                    key={ind.key}
+                    aria-hidden={i !== active}
+                    className="absolute h-full w-[min(94%,540px)] overflow-hidden rounded-[24px] shadow-[0_32px_70px_-24px_rgba(0,0,0,0.55)] transition-[transform,opacity] duration-[380ms] ease-out motion-reduce:transition-none motion-reduce:duration-0"
+                    style={{ transform, opacity, zIndex: z, background: ind.gradient }}
+                  >
+                    <div className="absolute inset-0 bg-black/28" />
+                    {/* No photography behind this card, so the text sits
+                        centered in the card itself rather than anchored to
+                        the bottom like a photo caption. */}
+                    <div className="absolute inset-0 flex flex-col items-center justify-center p-9 text-center">
+                      <span className="mb-4 flex h-12 w-12 items-center justify-center rounded-full border border-white/25 bg-white/10 text-white backdrop-blur-sm">
+                        <IndustryIcon icon={ind.icon} />
+                      </span>
+                      <span className="mb-2 block font-mono text-[11px] font-semibold uppercase tracking-[0.1em] text-[#8fd6c4]">
+                        {String(i + 1).padStart(2, "0")} / {String(COUNT).padStart(2, "0")}
+                      </span>
+                      <h3 className="text-[25px] font-semibold text-white">{ind.name}</h3>
+                      <p className="mt-3 max-w-[38ch] text-[14.5px] leading-[1.6] text-white/85">{ind.copy}</p>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
-      </div>
 
       {/* ---------- Mobile/tablet fallback: plain vertical list ---------- */}
       <div className="wrap hidden max-[900px]:block">

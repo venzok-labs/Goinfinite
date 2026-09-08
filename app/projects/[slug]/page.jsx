@@ -31,17 +31,6 @@ export default async function ProjectPage({ params }) {
     <div className="bg-[#0c1826]">
       <Nav />
 
-      {/* Photo placeholder band — same diagonal-hatch treatment as the
-          project card grid, until real project photography is supplied. */}
-      <div
-        aria-hidden="true"
-        className="flex aspect-[21/9] w-full items-center justify-center bg-[#0c1826] bg-[repeating-linear-gradient(45deg,rgba(255,255,255,0.05)_0px,rgba(255,255,255,0.05)_2px,transparent_2px,transparent_14px)]"
-      >
-        <span className="font-mono text-[11px] uppercase tracking-[0.12em] text-white/40">
-          Project photo / labelled illustration
-        </span>
-      </div>
-
       <header className="py-10 pb-11">
         <div className="wrap">
           <div className="font-mono text-xs text-[#7a93ad] [&_a]:text-[#7a93ad] [&_a:hover]:text-white">

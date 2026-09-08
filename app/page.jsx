@@ -3,9 +3,10 @@ import Hero from "../components/Hero";
 import WhatWeDo from "../components/WhatWeDo";
 import Capabilities from "../components/Capabilities";
 import Industries from "../components/Industries";
+import AboutTimeline from "../components/AboutTimeline";
 import ProjectBanner from "../components/ProjectBanner";
 
-// Building this page part by part. Next up: WhyUs, CTA, Footer.
+// Building this page part by part. Next up: CTA, Footer.
 // Full project details (Client/Challenge/Approach/Outcome) live only on
 // /projects/[slug] — the Home page shows a logo-only banner (ProjectBanner).
 // The full-detail card grid (components/Projects.jsx) is kept unused, in
@@ -18,6 +19,7 @@ export default function Home() {
       <WhatWeDo />
       <Capabilities />
       <Industries />
+      <AboutTimeline />
       <ProjectBanner />
     </>
   );
