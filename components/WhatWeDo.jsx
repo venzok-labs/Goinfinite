@@ -1,9 +1,5 @@
-"use client";
-
-import { useRef } from "react";
 import Link from "next/link";
 import Reveal from "./Reveal";
-import ScrollGear from "./ScrollGear";
 import styles from "./WhatWeDo.module.css";
 
 // Each step can carry a real photo (`image`); until one is supplied it falls
@@ -38,11 +34,8 @@ const STEPS = [
 ];
 
 export default function WhatWeDo() {
-  const sectionRef = useRef(null);
-
   return (
-    <section id="what-we-do" ref={sectionRef}>
-      <ScrollGear sectionRef={sectionRef} />
+    <section id="what-we-do">
       <div className="wrap">
         <Reveal className="sec-head">
           <div className={`eyebrow ${styles.eyebrow}`}>What we do</div>
