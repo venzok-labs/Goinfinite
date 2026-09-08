@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Nav from "../../components/Nav";
-import styles from "./services.module.css";
+import ContactTrigger from "../../components/ContactTrigger";
+import ServicesContactAutoOpen from "../../components/ServicesContactAutoOpen";
 
 export const metadata = {
   title: "Engineering Services — Infinite Solutions",
@@ -106,14 +107,15 @@ export default function ServicesPage() {
   return (
     <>
       <Nav />
+      <ServicesContactAutoOpen />
 
-      <header className={styles.hero}>
+      <header className="bg-nav-bg py-16 pb-14">
         <div className="wrap">
-          <div className={styles.crumb}>
+          <div className="font-mono text-[12.5px] text-[#bcd7f4] [&_a]:text-[#bcd7f4] [&_a:hover]:text-white">
             <Link href="/">Home</Link> / Services
           </div>
-          <h1>Engineering Services</h1>
-          <p>
+          <h1 className="mt-3.5 text-[clamp(32px,3vw+16px,48px)] text-white">Engineering Services</h1>
+          <p className="mt-3 max-w-[60ch] text-[16.5px] text-[#d3e4f5]">
             One engineering partner, six connected capabilities — from the first concept to a
             validated, manufacturable product.
           </p>
@@ -122,11 +124,18 @@ export default function ServicesPage() {
 
       <section>
         <div className="wrap">
-          <div className={styles.list}>
+          <div className="flex flex-col gap-16 py-[72px]">
             {SERVICES.map((s) => (
-              <article key={s.no} className={styles.row} id={`service-${s.no}`}>
+              <article
+                key={s.no}
+                id={`service-${s.no}`}
+                // offsets the anchor landing spot so the sticky nav (72px)
+                // never covers the top of the section when jumping here
+                // from a Home-page link
+                className="grid scroll-mt-[92px] grid-cols-[0.85fr_1.15fr] items-center gap-10 even:[direction:rtl] even:[&>*]:[direction:ltr] max-[860px]:grid-cols-1 max-[860px]:[direction:ltr]"
+              >
                 <div
-                  className={styles.rowImage}
+                  className="min-h-[280px] rounded-2xl bg-panel-1 bg-cover bg-center shadow-[0_14px_34px_-18px_rgba(11,42,74,0.35)]"
                   style={
                     s.image
                       ? { backgroundImage: `url(${s.image})` }
@@ -135,14 +144,22 @@ export default function ServicesPage() {
                   role="img"
                   aria-label={`${s.title} — illustration`}
                 />
-                <div className={styles.rowContent}>
-                  <span className={styles.no}>{s.no}</span>
-                  <h2>{s.title}</h2>
-                  <p className={styles.tagline}>{s.tagline}</p>
-                  <p className={styles.copy}>{s.copy}</p>
-                  <ul className={styles.caps}>
+                <div>
+                  <span className="font-mono text-xs tracking-[0.06em] text-blue">{s.no}</span>
+                  <h2 className="mt-2 text-[26px]">{s.title}</h2>
+                  <p className="mt-1.5 text-[15px] font-semibold text-blue">{s.tagline}</p>
+                  <p className="mt-3 text-[15.5px] leading-[1.6] text-steel">{s.copy}</p>
+                  {/* Each capability its own pill, colour cycling through
+                      three accent tones so the list reads as distinct points
+                      rather than one block of uniform grey tags. */}
+                  <ul className="mt-5 flex list-none flex-wrap gap-2.5 p-0">
                     {s.capabilities.map((c) => (
-                      <li key={c}>{c}</li>
+                      <li
+                        key={c}
+                        className="rounded-[20px] border border-current bg-white p-[8px_16px] text-[13.5px] font-medium opacity-[0.92] [&:nth-child(3n)]:text-[#0f8a7a] [&:nth-child(3n+1)]:text-[#1d6fbf] [&:nth-child(3n+2)]:text-[#b3690a]"
+                      >
+                        {c}
+                      </li>
                     ))}
                   </ul>
                 </div>
@@ -154,14 +171,14 @@ export default function ServicesPage() {
 
       <section>
         <div className="wrap">
-          <div className={styles.ctaBand}>
+          <div className="mb-20 flex flex-wrap items-center justify-between gap-7 rounded-[20px] bg-[linear-gradient(120deg,var(--panel-1),var(--panel-2))] p-[48px_44px]">
             <div>
-              <h2>Have an Engineering Challenge?</h2>
-              <p>Tell us about your requirement and we'll help identify the right approach.</p>
+              <h2 className="text-2xl text-white">Have an Engineering Challenge?</h2>
+              <p className="mt-2 text-[14.5px] text-[#d3e4f5]">
+                Tell us about your requirement and we'll help identify the right approach.
+              </p>
             </div>
-            <Link className="btn btn-white" href="/#contact">
-              Discuss Your Project →
-            </Link>
+            <ContactTrigger className="btn btn-white">Discuss Your Project →</ContactTrigger>
           </div>
         </div>
       </section>

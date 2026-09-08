@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import styles from "./Hero3D.module.css";
 
 // Rotating wireframe engineering model — stands in for a CAD/scan model in the hero.
 // Falls back to a static SVG wireframe if WebGL isn't available.
@@ -92,10 +91,10 @@ export default function Hero3D() {
   }, []);
 
   return (
-    <div className={styles.stage}>
-      {!failed && <canvas ref={canvasRef} />}
+    <div className="relative h-[380px] max-[900px]:h-[300px]">
+      {!failed && <canvas ref={canvasRef} className="block !h-full !w-full" />}
       {failed && (
-        <div className={styles.fallback}>
+        <div className="absolute inset-0 flex items-center justify-center opacity-90">
           <svg viewBox="0 0 200 200" width="220">
             <g fill="none" stroke="#1d6fbf" strokeWidth="1.5" opacity=".8">
               <polygon points="100,20 170,60 170,140 100,180 30,140 30,60" />
@@ -106,7 +105,9 @@ export default function Hero3D() {
           </svg>
         </div>
       )}
-      <div className={styles.cap}>Wireframe model · rotating render</div>
+      <div className="absolute bottom-1.5 left-1/2 -translate-x-1/2 font-mono text-[10.5px] uppercase tracking-[0.08em] text-steel">
+        Wireframe model · rotating render
+      </div>
     </div>
   );
 }

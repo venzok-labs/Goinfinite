@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import styles from "./ScrollCompanion.module.css";
 
 // Site-wide scroll companion: the same wireframe-globe badge on every page
 // (mounted once in app/layout.jsx, so it persists across client-side
@@ -120,8 +119,13 @@ export default function ScrollCompanion() {
   if (failed) return null;
 
   return (
-    <div className={`${styles.badge} ${visible ? styles.visible : ""}`} aria-hidden="true">
-      <canvas ref={canvasRef} className={styles.canvas} />
+    <div
+      aria-hidden="true"
+      className={`pointer-events-none fixed right-6 bottom-6 z-40 h-[72px] w-[72px] rounded-full border border-line bg-white shadow-[0_12px_28px_-12px_rgba(11,42,74,0.35)] opacity-0 motion-reduce:transition-none transition-[opacity,transform] duration-[450ms] ease-out max-[960px]:right-[18px] max-[960px]:bottom-[18px] max-[960px]:h-[60px] max-[960px]:w-[60px] max-[620px]:right-[14px] max-[620px]:bottom-[14px] max-[620px]:h-[50px] max-[620px]:w-[50px] ${
+        visible ? "translate-y-0 scale-100 opacity-100" : "translate-y-[14px] scale-[0.85]"
+      }`}
+    >
+      <canvas ref={canvasRef} className="block h-full w-full" />
     </div>
   );
 }

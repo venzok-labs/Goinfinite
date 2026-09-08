@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import styles from "./CapabilityWheel.module.css";
 
 const CATS = [
   {
@@ -304,7 +303,7 @@ export default function CapabilityWheel() {
           if (hovered) hovered.material.emissive.setHex(0x000000);
           hovered = hit;
           if (hovered) hovered.material.emissive.setHex(0x0a2e5c);
-          stage.classList.toggle(styles.hoverable, !!hovered);
+          stage.classList.toggle("hoverable", !!hovered);
         }
 
         function onPointerDown(ev) {
@@ -317,7 +316,7 @@ export default function CapabilityWheel() {
           downX = ev.clientX;
           downY = ev.clientY;
           lastPointerX = ev.clientX;
-          stage.classList.add(styles.grabbing);
+          stage.classList.add("grabbing");
           try {
             renderer.domElement.setPointerCapture(ev.pointerId);
           } catch (err) {
@@ -341,7 +340,7 @@ export default function CapabilityWheel() {
         function endDrag(ev) {
           if (!isDragging) return;
           isDragging = false;
-          stage.classList.remove(styles.grabbing);
+          stage.classList.remove("grabbing");
           if (!moved) {
             // a tap/click, not a drag — open that segment's detail
             const hit = pickWedge(ev);
@@ -451,10 +450,10 @@ export default function CapabilityWheel() {
   if (failed) return null;
 
   return (
-    <div className={styles.wrap}>
-      <div className={styles.hint} aria-hidden="true">
-        <span className={styles.hintRing} />
-        <span className={styles.hintBadge}>
+    <div className="flex flex-col items-center px-5 pt-6 pb-2">
+      <div aria-hidden="true" className="relative z-[2] mb-2.5 flex flex-col items-center gap-2">
+        <span className="absolute inset-0 animate-[cw3Pulse_1.6s_ease-out_infinite] rounded-full bg-blue motion-reduce:animate-none" />
+        <span className="relative flex h-[34px] w-[34px] animate-[cw3Bounce_1.6s_ease-in-out_infinite] items-center justify-center rounded-full bg-[linear-gradient(145deg,var(--blue),var(--panel-1))] shadow-[0_6px_16px_-6px_rgba(11,42,74,0.5)] motion-reduce:animate-none">
           <svg viewBox="0 0 20 20" width="16" height="16">
             <path
               d="M10 4 V14 M5 10 L10 15 L15 10"
@@ -466,24 +465,38 @@ export default function CapabilityWheel() {
             />
           </svg>
         </span>
-        <span className={styles.hintLabel}>Tap a segment</span>
+        <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.08em] text-steel">
+          Tap a segment
+        </span>
       </div>
-      <div className={styles.stage} ref={stageRef} />
+      {/* cursor/hover state here is toggled imperatively via classList from
+          the Three.js pointer handlers above (outside React render), so
+          `.cw-stage`/`.grabbing`/`.hoverable` stay plain CSS (globals.css)
+          rather than conditional Tailwind classes. */}
+      <div className="cw-stage relative aspect-square w-[min(520px,90vw)] cursor-grab touch-none" ref={stageRef} />
 
       {active && (
         <div
           ref={popoverRef}
-          className={`${styles.popover} ${visible ? styles.popoverVisible : ""}`}
+          className={`fixed left-1/2 top-[46%] z-[200] w-[min(320px,calc(100vw-40px))] -translate-x-1/2 -translate-y-1/2 rounded-[18px] border border-[#bcdcfa] bg-[#e3f2fd] p-[26px_24px_24px] text-center opacity-0 shadow-[0_20px_44px_-14px_rgba(11,42,74,0.35)] transition-[opacity,transform] duration-[240ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${
+            visible ? "scale-100 opacity-100" : "scale-[0.92]"
+          }`}
           role="dialog"
           aria-modal="false"
           aria-labelledby="cw3-title"
         >
-          <button className={styles.popoverClose} aria-label="Close" onClick={closeModal}>
+          <button
+            className="absolute top-2 right-2.5 h-7 w-7 rounded-full border-0 bg-transparent text-xl leading-none text-[#5c85ab] hover:bg-[rgba(11,42,74,0.08)] hover:text-navy"
+            aria-label="Close"
+            onClick={closeModal}
+          >
             ×
           </button>
-          <h3 id="cw3-title">{active.label}</h3>
-          <p>{active.detail}</p>
-          <span className={styles.popoverTail} />
+          <h3 id="cw3-title" className="mb-2 text-[19px] text-navy">
+            {active.label}
+          </h3>
+          <p className="text-[14.5px] leading-normal text-[#2c4f70]">{active.detail}</p>
+          <span className="absolute -bottom-2 left-1/2 h-4 w-4 -translate-x-1/2 rotate-45 rounded-[0_0_4px_0] border-b border-r border-[#bcdcfa] bg-[#e3f2fd]" />
         </div>
       )}
     </div>

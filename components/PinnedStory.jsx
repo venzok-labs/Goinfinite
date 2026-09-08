@@ -1,7 +1,7 @@
 import Logo from "./Logo";
 import GearboxHero from "./GearboxHero";
 import StatsStrip from "./StatsStrip";
-import styles from "./PinnedStory.module.css";
+import ContactTrigger from "./ContactTrigger";
 
 // Same six steps as WhatWeDo.jsx, stacked single-column here since this
 // layout shares half the width with the pinned model.
@@ -27,32 +27,32 @@ const STEPS = [
  */
 export default function PinnedStory() {
   return (
-    <section className={styles.story}>
-      <div className={styles.grid}>
-        <div className={styles.pinCol}>
-          <div className={styles.pinStage}>
+    <section className="relative">
+      <div className="grid grid-cols-[0.95fr_1.05fr] max-[900px]:grid-cols-1">
+        <div className="sticky top-0 h-screen overflow-hidden bg-nav-bg max-[900px]:static max-[900px]:h-[60vh] max-[900px]:min-h-[360px]">
+          <div className="h-full p-6">
             <GearboxHero />
           </div>
         </div>
 
-        <div className={styles.scrollCol}>
-          <div className={`${styles.heroText} reveal in`}>
-            <Logo size={40} onDark className={styles.logoLockup} />
-            <div className="eyebrow">Engineering Solutions for a Better Tomorrow · Est. 2017</div>
-            <h1 className={styles.h1}>
+        <div className="min-w-0">
+          <div className="reveal in flex min-h-screen flex-col justify-center bg-nav-bg py-14 px-[clamp(24px,5vw,64px)] max-[900px]:min-h-0 max-[900px]:pt-10">
+            <Logo size={40} onDark className="mb-[26px]" />
+            <div className="eyebrow text-[#bcd7f4]">
+              Engineering Solutions for a Better Tomorrow · Est. 2017
+            </div>
+            <h1 className="mt-3.5 max-w-[13ch] break-words text-[clamp(32px,3.4vw+10px,50px)] text-white">
               Engineering Intelligence.
               <br />
-              <span className={styles.accent}>From Concept to Reality.</span>
+              <span className="text-[#8fc9ff]">From Concept to Reality.</span>
             </h1>
-            <p className={styles.sub}>
+            <p className="mt-4 max-w-[52ch] text-base leading-[1.6] text-[#d3e4f5]">
               25+ years of engineering experience across automotive, aerospace, heavy engineering,
               shipbuilding and defence — covering Concept Design, CAE Validation, Advanced
               Measurement, Manufacturing, Testing and Special‑Purpose Machine Development.
             </p>
-            <div className={styles.ctas}>
-              <a className="btn btn-white" href="#contact">
-                Discuss Your Project →
-              </a>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <ContactTrigger className="btn btn-white">Discuss Your Project →</ContactTrigger>
               <a className="btn btn-ghost-white" href="#services">
                 Explore Services
               </a>
@@ -61,20 +61,23 @@ export default function PinnedStory() {
 
           <StatsStrip />
 
-          <div className={styles.whatWeDo}>
+          <div className="bg-white py-16 px-[clamp(24px,5vw,64px)]">
             <div className="eyebrow">What we do</div>
-            <h2 className={styles.h2}>One Engineering Partner. Multiple Capabilities.</h2>
-            <p className={styles.lede}>
+            <h2 className="mt-2.5 text-[30px]">One Engineering Partner. Multiple Capabilities.</h2>
+            <p className="mt-3 text-[15.5px] text-steel">
               A successful product must be designed correctly, validated under real operating
               conditions, measured accurately, manufactured reliably, and tested before it
               reaches the customer — we bring all of it together under one roof.
             </p>
 
-            <div className={styles.cards}>
+            <div className="mt-8 flex flex-col gap-[18px]">
               {STEPS.map((s) => (
-                <article key={s.no} className={styles.card}>
+                <article
+                  key={s.no}
+                  className="group relative flex min-h-[220px] items-end overflow-hidden rounded-[14px] shadow-[0_14px_34px_-18px_rgba(11,42,74,0.35)] transition-[transform,box-shadow] duration-[250ms] ease-out hover:-translate-y-[3px] hover:shadow-[0_18px_40px_-16px_rgba(11,42,74,0.42)]"
+                >
                   <div
-                    className={styles.cardImage}
+                    className="absolute inset-0 scale-[1.02] bg-panel-1 bg-cover bg-center transition-transform duration-500 ease-out group-hover:scale-[1.08]"
                     style={
                       s.image
                         ? { backgroundImage: `url(${s.image})` }
@@ -83,11 +86,13 @@ export default function PinnedStory() {
                     role="img"
                     aria-label={`${s.title} — illustration`}
                   />
-                  <div className={styles.cardScrim} />
-                  <div className={styles.cardContent}>
-                    <span className={styles.no}>{s.no}</span>
-                    <h4>{s.title}</h4>
-                    <p>{s.copy}</p>
+                  <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(6,20,38,0)_34%,rgba(6,20,38,0.88)_100%)]" />
+                  <div className="relative z-[2] p-[22px]">
+                    <span className="font-mono text-[11.5px] tracking-[0.06em] text-[#8fc9ff]">
+                      {s.no}
+                    </span>
+                    <h4 className="mt-2 text-lg text-white">{s.title}</h4>
+                    <p className="mt-1.5 text-[13.5px] leading-normal text-white/86">{s.copy}</p>
                   </div>
                 </article>
               ))}

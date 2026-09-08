@@ -1,6 +1,5 @@
 import Link from "next/link";
 import Reveal from "./Reveal";
-import styles from "./WhatWeDo.module.css";
 
 // Each step can carry a real photo (`image`); until one is supplied it falls
 // back to a plain brand-blue gradient card instead of placeholder artwork.
@@ -38,22 +37,26 @@ export default function WhatWeDo() {
     <section id="what-we-do">
       <div className="wrap">
         <Reveal className="sec-head">
-          <div className={`eyebrow ${styles.eyebrow}`}>What we do</div>
-          <h2 className={styles.h2}>One Engineering Partner. Multiple Capabilities.</h2>
-          <p className={styles.lede}>
+          <div className="eyebrow text-[15px]">What we do</div>
+          <h2 className="text-[38px]">One Engineering Partner. Multiple Capabilities.</h2>
+          <p className="max-w-[62ch] text-[17px]">
             A successful product must be designed correctly, validated under real operating
             conditions, measured accurately, manufactured reliably, and tested before it reaches
             the customer — we bring all of it together under one roof.
           </p>
         </Reveal>
 
-        <div className={styles.grid}>
+        <div className="grid grid-cols-3 gap-[22px] max-[980px]:grid-cols-2 max-[620px]:grid-cols-1">
           {STEPS.map((s) => {
             const isLast = s.no === "06";
             return (
-              <Reveal key={s.no} as="article" className={styles.card}>
+              <Reveal
+                key={s.no}
+                as="article"
+                className="group relative flex min-h-[300px] cursor-pointer items-end overflow-hidden rounded-2xl shadow-[0_14px_34px_-18px_rgba(11,42,74,0.35)] transition-[transform,box-shadow] duration-[250ms] ease-out hover:-translate-y-1 hover:shadow-[0_20px_44px_-16px_rgba(11,42,74,0.45)]"
+              >
                 <div
-                  className={styles.image}
+                  className="absolute inset-0 scale-[1.02] bg-panel-1 bg-cover bg-center transition-transform duration-500 ease-out group-hover:scale-110"
                   style={
                     s.image
                       ? { backgroundImage: `url(${s.image})` }
@@ -62,20 +65,23 @@ export default function WhatWeDo() {
                   role="img"
                   aria-label={`${s.title} — illustration`}
                 />
-                <div className={styles.scrim} />
-                <div className={styles.content}>
-                  <span className={styles.no}>{s.no}</span>
-                  <h4>{s.title}</h4>
-                  <p>{s.copy}</p>
+                <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(6,20,38,0)_34%,rgba(6,20,38,0.88)_100%)]" />
+                <div className="relative z-[2] p-[26px_24px] text-white">
+                  <span className="font-mono text-xs tracking-[0.06em] text-[#8fc9ff]">{s.no}</span>
+                  <h4 className="mt-2 text-xl text-white">{s.title}</h4>
+                  <p className="mt-2 text-sm leading-normal text-white/86">{s.copy}</p>
                   {isLast && (
-                    <Link href="/services" className={styles.cardCta}>
+                    <Link
+                      href="/services"
+                      className="relative mt-3.5 inline-flex items-center gap-2 rounded-full border-[1.5px] border-white/65 px-[18px] py-[9px] font-body text-[13px] font-semibold text-white transition-[background,border-color,transform] duration-200 hover:-translate-y-px hover:border-white hover:bg-white/16"
+                    >
                       See How It Works →
                     </Link>
                   )}
                 </div>
                 <Link
                   href={`/services#service-${s.no}`}
-                  className={`${styles.cardLink} ${isLast ? styles.cardLinkShort : ""}`}
+                  className={`absolute inset-0 z-[3] ${isLast ? "bottom-[54px]" : ""} focus-visible:outline focus-visible:outline-2 focus-visible:-outline-offset-[3px] focus-visible:outline-white`}
                   aria-label={`${s.title} — see this service on the Services page`}
                 />
               </Reveal>

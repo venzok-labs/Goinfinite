@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Logo from "./Logo";
-import styles from "./Nav.module.css";
+import ContactTrigger from "./ContactTrigger";
 
 const LINKS = [
   { href: "/#about", label: "About" },
@@ -9,29 +9,35 @@ const LINKS = [
   { href: "/#capabilities", label: "Capabilities" },
   { href: "/#projects", label: "Projects" },
   { href: "/#insights", label: "Insights" },
-  { href: "/#contact", label: "Contact" },
 ];
 
 export default function Nav() {
   return (
-    <nav className={styles.nav}>
-      <div className={`wrap ${styles.inner}`}>
+    <nav className="sticky top-0 z-30 border-b border-line bg-white-a backdrop-blur-[10px]">
+      <div className="wrap flex h-[72px] items-center justify-between gap-6">
         <Link href="/" aria-label="Infinite Solutions — home">
           <Logo size={32} />
         </Link>
 
-        <div className={styles.links}>
+        <div className="flex flex-1 items-center justify-center gap-7 max-[980px]:hidden">
           {LINKS.map((l) => (
-            <Link key={l.href} href={l.href}>
+            <Link
+              key={l.href}
+              href={l.href}
+              className="relative text-sm font-medium text-ink after:absolute after:-bottom-[22px] after:left-0 after:right-0 after:h-0.5 after:origin-center after:scale-x-0 after:bg-blue after:transition-transform after:duration-200 hover:text-blue hover:after:scale-x-100"
+            >
               {l.label}
             </Link>
           ))}
+          <ContactTrigger className="relative text-sm font-medium text-ink after:absolute after:-bottom-[22px] after:left-0 after:right-0 after:h-0.5 after:origin-center after:scale-x-0 after:bg-blue after:transition-transform after:duration-200 hover:text-blue hover:after:scale-x-100">
+            Contact
+          </ContactTrigger>
         </div>
 
-        <div className={styles.cta}>
-          <a className={styles.tel} href="/#contact">
+        <div className="flex flex-none items-center gap-3.5">
+          <ContactTrigger className="hidden text-[13px] text-steel min-[980px]:inline">
             +91 · South India
-          </a>
+          </ContactTrigger>
         </div>
       </div>
     </nav>

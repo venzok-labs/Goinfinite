@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import styles from "./GearboxHero.module.css";
 
 /*
  * Procedurally-generated 3D gear cluster (gearbox-hero-package), adapted from
@@ -418,10 +417,15 @@ export default function GearboxHero() {
   }, []);
 
   return (
-    <div ref={containerRef} className={styles.stage}>
-      {!failed && <canvas ref={canvasRef} className={styles.canvas} />}
+    <div
+      ref={containerRef}
+      className="relative mx-auto h-full min-h-[420px] w-full max-w-[78%] max-[900px]:min-h-[300px] max-[900px]:max-w-full"
+    >
+      {!failed && (
+        <canvas ref={canvasRef} className="block !h-full !w-full outline-none" />
+      )}
       {failed && (
-        <div className={styles.fallback}>
+        <div className="absolute inset-0 flex items-center justify-center opacity-90">
           <svg viewBox="0 0 200 200" width="200">
             <g fill="none" stroke="#076bdd" strokeWidth="6" opacity=".8">
               <circle cx="70" cy="90" r="34" />
