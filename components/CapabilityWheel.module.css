@@ -1,0 +1,161 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px 20px 8px;
+}
+.hint {
+  margin-bottom: 10px;
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+.hintRing,
+.hintBadge {
+  position: relative;
+  animation: cw3Bounce 1.6s ease-in-out infinite;
+}
+.hintRing {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: var(--blue);
+  animation: cw3Pulse 1.6s ease-out infinite;
+}
+.hintBadge {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, var(--blue), var(--panel-1));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 16px -6px rgba(11, 42, 74, 0.5);
+}
+.hintLabel {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--steel);
+}
+@keyframes cw3Bounce {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(6px);
+  }
+}
+@keyframes cw3Pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.35;
+  }
+  100% {
+    transform: scale(1.9);
+    opacity: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hintRing,
+  .hintBadge {
+    animation: none;
+  }
+}
+
+.stage {
+  position: relative;
+  width: min(520px, 90vw);
+  aspect-ratio: 1 / 1;
+  /* now genuinely draggable — grab/grabbing matches what it does */
+  cursor: grab;
+  touch-action: none;
+}
+.stage.grabbing {
+  cursor: grabbing;
+}
+.stage :global(canvas) {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.stage.hoverable :global(canvas) {
+  cursor: pointer;
+}
+
+/* Speech-bubble popover — no dimming backdrop behind it (removed on
+   request); it floats centered on screen, light blue, with a tail, and
+   closes via the × button, a click/tap anywhere outside it, starting a
+   drag on the wheel, or scrolling the page (see CapabilityWheel.jsx). */
+.popover {
+  position: fixed;
+  left: 50%;
+  top: 46%;
+  z-index: 200;
+  width: min(320px, calc(100vw - 40px));
+  background: #e3f2fd;
+  border: 1px solid #bcdcfa;
+  border-radius: 18px;
+  padding: 26px 24px 24px;
+  text-align: center;
+  box-shadow: 0 20px 44px -14px rgba(11, 42, 74, 0.35);
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.92);
+  transition: opacity 0.24s ease, transform 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.popoverVisible {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+@media (prefers-reduced-motion: reduce) {
+  .popover {
+    transition: none;
+  }
+}
+.popover h3 {
+  margin: 0 0 8px;
+  font-size: 19px;
+  color: var(--navy);
+}
+.popover p {
+  margin: 0;
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: #2c4f70;
+}
+.popoverClose {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  font-size: 20px;
+  line-height: 1;
+  color: #5c85ab;
+  cursor: pointer;
+  border-radius: 50%;
+}
+.popoverClose:hover {
+  color: var(--navy);
+  background: rgba(11, 42, 74, 0.08);
+}
+.popoverTail {
+  position: absolute;
+  left: 50%;
+  bottom: -8px;
+  width: 16px;
+  height: 16px;
+  background: #e3f2fd;
+  border-right: 1px solid #bcdcfa;
+  border-bottom: 1px solid #bcdcfa;
+  transform: translateX(-50%) rotate(45deg);
+  border-radius: 0 0 4px 0;
+}

@@ -1,0 +1,28 @@
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 19px;
+  white-space: nowrap;
+}
+.mark {
+  display: block;
+  height: auto;
+}
+.word b {
+  color: var(--blue);
+  font-weight: 700;
+}
+.word span {
+  color: var(--steel);
+  font-weight: 600;
+}
+/* used on a solid brand-blue background (nav, CTA band) */
+.word.onDark b {
+  color: #ffffff;
+}
+.word.onDark span {
+  color: rgba(255, 255, 255, 0.78);
+}
