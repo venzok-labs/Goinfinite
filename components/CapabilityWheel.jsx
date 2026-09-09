@@ -465,7 +465,10 @@ export default function CapabilityWheel() {
             />
           </svg>
         </span>
-        <span className="font-mono text-[11px] font-semibold uppercase tracking-[0.08em] text-steel">
+        {/* Same hint-caption treatment (mono, uppercase, blue) used across
+            every interactive section on the page, so they read as one
+            family of "here's how to use this" affordances. */}
+        <span className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.08em] text-blue">
           Tap a segment
         </span>
       </div>

@@ -3,9 +3,10 @@
 import { useEffect, useRef, useState } from "react";
 import Reveal from "./Reveal";
 
-// Same seven sectors as before, now carrying what the sticky story needs per
-// step: a short sector tag, a distinct two-tone gradient (kept inside the
-// existing brand palette — no new colors introduced), and a small line-icon.
+// Same seven sectors as before. Gradients now cycle through a small 3-tone
+// palette (same idea as the What We Do / Projects carousels) instead of a
+// bespoke one-off color per industry — 7 hand-picked gradients read as
+// arbitrary, a short repeating sequence reads as a deliberate system.
 // `image` is left undefined until real photography exists; swapping any one
 // entry's `image` in later replaces just that step's gradient placeholder —
 // see the fallback in the right-column render below.
@@ -25,7 +26,7 @@ const INDUSTRIES = [
     name: "Aerospace",
     copy: "Precision engineering, complex component development, measurement, and engineering analysis.",
     icon: "plane",
-    gradient: "linear-gradient(135deg, #1d6fbf, #8fc9ff)",
+    gradient: "linear-gradient(135deg, #123a63, #0b2a4a)",
     image: undefined,
   },
   {
@@ -34,7 +35,7 @@ const INDUSTRIES = [
     name: "Heavy Engineering",
     copy: "Industrial equipment, machinery, reverse engineering, manufacturing engineering, and engineering problem solving.",
     icon: "gear",
-    gradient: "linear-gradient(135deg, #123a63, #0b2a4a)",
+    gradient: "linear-gradient(135deg, #076bdd, #0e5aa0)",
     image: undefined,
   },
   {
@@ -43,7 +44,7 @@ const INDUSTRIES = [
     name: "Shipbuilding",
     copy: "Mechanical components, engineering measurement, product development, and manufacturing support.",
     icon: "ship",
-    gradient: "linear-gradient(135deg, #076bdd, #0b2a4a)",
+    gradient: "linear-gradient(135deg, #0b2a4a, #1d6fbf)",
     image: undefined,
   },
   {
@@ -52,7 +53,7 @@ const INDUSTRIES = [
     name: "Defence",
     copy: "Engineering design support, product development, measurement, and validation‑related engineering services.",
     icon: "shield",
-    gradient: "linear-gradient(135deg, #0b2a4a, #0e5aa0)",
+    gradient: "linear-gradient(135deg, #123a63, #0b2a4a)",
     image: undefined,
   },
   {
@@ -61,7 +62,7 @@ const INDUSTRIES = [
     name: "Industrial Equipment & Machinery",
     copy: "Custom engineering, machine development, reverse engineering, and product improvement.",
     icon: "factory",
-    gradient: "linear-gradient(135deg, #0e5aa0, #123a63)",
+    gradient: "linear-gradient(135deg, #076bdd, #0e5aa0)",
     image: undefined,
   },
   {
@@ -70,7 +71,7 @@ const INDUSTRIES = [
     name: "Energy & Process Industries",
     copy: "Engineering services for industrial equipment, machinery, and plant‑related components.",
     icon: "bolt",
-    gradient: "linear-gradient(135deg, #0b2a4a, #076bdd)",
+    gradient: "linear-gradient(135deg, #0b2a4a, #1d6fbf)",
     image: undefined,
   },
 ];
@@ -253,6 +254,16 @@ export default function Industries() {
                 <span className="font-mono text-xs tracking-[0.08em] text-[#7a93ad]">
                   {String(active + 1).padStart(2, "0")} / {String(COUNT).padStart(2, "0")}
                 </span>
+              </div>
+
+              {/* Same hint-caption treatment used across every interactive
+                  section on the page (mono, uppercase, small leading icon) —
+                  just recolored for this panel's dark background. */}
+              <div className="mt-3.5 inline-flex items-center gap-[7px] font-mono text-[10.5px] font-semibold uppercase tracking-[0.08em] text-[#6fe3c9]">
+                <svg width="10" height="14" viewBox="0 0 10 14" fill="none" className="flex-none">
+                  <path d="M5 1v12M1 9l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                Scroll to explore panels
               </div>
             </div>
 
