@@ -1,12 +1,28 @@
 @import "tailwindcss";
 
+/*
+ * OFFICIAL BRAND PALETTE — single source of truth for color in this app.
+ * Every component should reach these through the Tailwind tokens bridged
+ * below (bg-blue, text-navy, bg-background, bg-surface, ...) or var(--x)
+ * where a Tailwind class isn't available (SVG/canvas). Do not hardcode a
+ * hex literal that duplicates one of these — update the token instead.
+ *
+ *   primary        --blue        #1877F2  Primary Blue
+ *   primary-dark   --blue-dark   #0F4C81  Deep Engineering Blue
+ *   primary-light  --tint-2      #EAF3FF  Light Blue
+ *   white          --white       #FFFFFF  White
+ *   background     --background  #F8FAFC  Background
+ *   surface        --surface     #FFFFFF  Surface White
+ */
 :root {
   --white: #ffffff;
+  --background: #f8fafc;
+  --surface: #ffffff;
   --tint: #f4f8fc;
-  --tint-2: #eaf2fb;
+  --tint-2: #eaf3ff;
   --navy: #0b2a4a;
-  --blue: #1d6fbf;
-  --blue-dark: #0e5aa0;
+  --blue: #1877f2;
+  --blue-dark: #0f4c81;
   --ink: #101c2c;
   --steel: #5c6b7e;
   --line: #e2e9f1;
@@ -37,6 +53,8 @@
    `font-display` instead of re-declaring the palette per file. */
 @theme {
   --color-white: var(--white);
+  --color-background: var(--background);
+  --color-surface: var(--surface);
   --color-tint: var(--tint);
   --color-tint-2: var(--tint-2);
   --color-navy: var(--navy);
@@ -128,6 +146,14 @@
   body {
     padding: 0;
     margin: 0;
+  }
+  html {
+    scroll-behavior: smooth;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
   }
   body {
     background: var(--white);

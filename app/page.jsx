@@ -5,8 +5,9 @@ import Capabilities from "../components/Capabilities";
 import Industries from "../components/Industries";
 import AboutTimeline from "../components/AboutTimeline";
 import ProjectBanner from "../components/ProjectBanner";
+import ContactSection from "../components/ContactSection";
 
-// Building this page part by part. Next up: CTA, Footer.
+// Building this page part by part. Next up: Footer.
 // Full project details (Client/Challenge/Approach/Outcome) live only on
 // /projects/[slug] — the Home page shows a logo-only banner (ProjectBanner).
 // The full-detail card grid (components/Projects.jsx) is kept unused, in
@@ -21,6 +22,6 @@ export default function Home() {
       <Industries />
       <AboutTimeline />
       <ProjectBanner />
-    </>
+      <ContactSection /></>
   );
 }

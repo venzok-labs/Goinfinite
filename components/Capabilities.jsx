@@ -3,7 +3,7 @@ import CapabilityWheel from "./CapabilityWheel";
 
 export default function Capabilities() {
   return (
-    <section id="capabilities" className="tint">
+    <section id="capabilities" className="bg-white">
       <div className="wrap">
         <Reveal className="sec-head">
           <div className="eyebrow">Capabilities</div>

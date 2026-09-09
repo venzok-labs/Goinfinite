@@ -26,9 +26,12 @@ export default function Counter({ value, suffix = "", plain = false, className =
           obs.unobserve(el);
           const start = performance.now();
           const dur = 1200;
+          // ease-out-cubic: fast start, gentle landing — a linear count
+          // reads as a mechanical tick, this reads as a smooth settle.
+          const easeOutCubic = (t) => 1 - Math.pow(1 - t, 3);
           function step(ts) {
             const p = Math.min((ts - start) / dur, 1);
-            const val = Math.floor(p * value);
+            const val = Math.floor(easeOutCubic(p) * value);
             setDisplay((plain ? val : val.toLocaleString("en-IN")) + (p >= 1 ? suffix : ""));
             if (p < 1) {
               requestAnimationFrame(step);

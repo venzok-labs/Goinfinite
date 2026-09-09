@@ -1,15 +1,14 @@
-"use client";
+import Link from "next/link";
 
-import { useContact } from "./ContactContext";
-
-// Drop-in replacement for `<a href="/#contact">` / `<Link href="/#contact">`
-// — same visual button, but opens the Contact modal instead of navigating to
-// a section that doesn't exist on the page.
+// Drop-in replacement for a plain <a href="/#contact"> — same visual
+// button/link, but as a shared component so every "Contact"/"Discuss Your
+// Project" call site stays in sync. Navigates (or scrolls, if already on
+// the home page) to the ContactSection at the bottom of the page instead of
+// opening a popup modal.
 export default function ContactTrigger({ className, children, ...props }) {
-  const { openContact } = useContact();
   return (
-    <button type="button" className={className} onClick={openContact} {...props}>
+    <Link href="/#contact" className={className} {...props}>
       {children}
-    </button>
+    </Link>
   );
 }

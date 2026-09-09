@@ -11,9 +11,9 @@ export default function Hero() {
           variants here since they were designed for a light background. */}
       <div className="grid min-h-[540px] grid-cols-[1.05fr_0.95fr] bg-nav-bg max-[900px]:min-h-0 max-[900px]:grid-cols-1">
         <div
-          className="reveal in flex min-w-0 flex-col justify-center py-14 pr-[clamp(8px,1.5vw,16px)] pb-11 pl-[clamp(24px,5vw,64px)]"
+          className="reveal in flex min-w-0 flex-col justify-center pt-7 pr-[clamp(8px,1.5vw,16px)] pb-11 pl-[clamp(24px,5vw,64px)]"
         >
-          <Logo size={40} onDark className="mb-[30px]" />
+          <Logo size={40} onDark className="mb-4" />
           <div className="eyebrow text-[14.5px] text-[#bcd7f4]">
             Engineering Solutions for a Better Tomorrow · Est. 2017
           </div>

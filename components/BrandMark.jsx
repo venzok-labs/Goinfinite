@@ -16,7 +16,7 @@ export default function BrandMark({ variant = "color", size = 34, className = ""
         <defs>
           <linearGradient id="markGrad" x1="0" y1="0" x2="1" y2="1">
             <stop offset="0" stopColor="#0b2a4a" />
-            <stop offset="0.55" stopColor="#1d6fbf" />
+            <stop offset="0.55" stopColor="var(--blue)" />
             <stop offset="1" stopColor="#8fc9ff" />
           </linearGradient>
         </defs>

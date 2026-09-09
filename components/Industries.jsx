@@ -15,15 +15,17 @@ const INDUSTRIES = [
     key: "automotive",
     tag: "Automotive",
     name: "Automotive",
+    blurb: "Design to production support",
     copy: "Product Development turns ideas into practical designs. CAE Validation digitally tests those designs for safety and performance. Engineering Measurement validates the results using physical prototypes. Component Engineering finalizes materials and dimensions, while Manufacturing Support prepares the components and tooling for high-volume production.",
     icon: "car",
-    gradient: "linear-gradient(135deg, #0b2a4a, #1d6fbf)",
+    gradient: "linear-gradient(135deg, var(--navy), var(--blue))",
     image: undefined,
   },
   {
     key: "aerospace",
     tag: "Aerospace",
     name: "Aerospace",
+    blurb: "Precision components & analysis",
     copy: "Precision engineering, complex component development, measurement, and engineering analysis.",
     icon: "plane",
     gradient: "linear-gradient(135deg, #123a63, #0b2a4a)",
@@ -33,24 +35,27 @@ const INDUSTRIES = [
     key: "heavy-engineering",
     tag: "Heavy Engineering",
     name: "Heavy Engineering",
+    blurb: "Machinery & reverse engineering",
     copy: "Industrial equipment, machinery, reverse engineering, manufacturing engineering, and engineering problem solving.",
     icon: "gear",
-    gradient: "linear-gradient(135deg, #076bdd, #0e5aa0)",
+    gradient: "linear-gradient(135deg, #076bdd, var(--blue-dark))",
     image: undefined,
   },
   {
     key: "shipbuilding",
     tag: "Shipbuilding",
     name: "Shipbuilding",
+    blurb: "Mechanical systems & measurement",
     copy: "Mechanical components, engineering measurement, product development, and manufacturing support.",
     icon: "ship",
-    gradient: "linear-gradient(135deg, #0b2a4a, #1d6fbf)",
+    gradient: "linear-gradient(135deg, var(--navy), var(--blue))",
     image: undefined,
   },
   {
     key: "defence",
     tag: "Defence",
     name: "Defence",
+    blurb: "Design, validation & support",
     copy: "Engineering design support, product development, measurement, and validation‑related engineering services.",
     icon: "shield",
     gradient: "linear-gradient(135deg, #123a63, #0b2a4a)",
@@ -60,18 +65,20 @@ const INDUSTRIES = [
     key: "industrial-equipment",
     tag: "Industrial Equipment & Machinery",
     name: "Industrial Equipment & Machinery",
+    blurb: "Custom engineering & automation",
     copy: "Custom engineering, machine development, reverse engineering, and product improvement.",
     icon: "factory",
-    gradient: "linear-gradient(135deg, #076bdd, #0e5aa0)",
+    gradient: "linear-gradient(135deg, #076bdd, var(--blue-dark))",
     image: undefined,
   },
   {
     key: "energy",
     tag: "Energy & Process Industries",
     name: "Energy & Process Industries",
+    blurb: "Plant & process engineering",
     copy: "Engineering services for industrial equipment, machinery, and plant‑related components.",
     icon: "bolt",
-    gradient: "linear-gradient(135deg, #0b2a4a, #1d6fbf)",
+    gradient: "linear-gradient(135deg, var(--navy), var(--blue))",
     image: undefined,
   },
 ];
@@ -182,84 +189,88 @@ export default function Industries() {
       </div>
 
       {/* ---------- Desktop: fixed-height panel, wheel-driven story ---------- */}
-      <div className="relative hidden h-screen min-[901px]:flex flex-col justify-center overflow-hidden bg-[#0c1826]">
+      <div className="relative hidden h-screen min-[901px]:flex flex-col justify-center overflow-hidden bg-white">
         {/* Faint background texture — the panel is much taller than the
-            content it holds, so this keeps the surrounding dark space from
+            content it holds, so this keeps the surrounding space from
             reading as empty rather than deliberate. */}
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 opacity-[0.05] bg-[repeating-linear-gradient(45deg,#ffffff_0px,#ffffff_1px,transparent_1px,transparent_28px)]"
+          className="pointer-events-none absolute inset-0 opacity-[0.04] bg-[repeating-linear-gradient(45deg,#0b2a4a_0px,#0b2a4a_1px,transparent_1px,transparent_28px)]"
         />
 
-        <div className="wrap grid grid-cols-[36%_64%] items-center gap-14 max-[1100px]:gap-10">
+        <div className="grid grid-cols-[46%_54%] items-center gap-6 px-8 max-[1100px]:gap-5 max-[720px]:px-5">
             {/* LEFT — static text plus a full jump-to-any-industry list, so
                 the column doesn't run out of content halfway down. Clicking
                 a row jumps straight to it (independent of the wheel stepper
                 on the stage). */}
             <div>
-              <div className="font-mono text-xs font-semibold uppercase tracking-[0.14em] text-[#6fe3c9]">
+              <div className="font-mono text-xs font-semibold uppercase tracking-[0.14em] text-blue">
                 Industries we serve
               </div>
-              <h2 className="mt-3.5 text-[clamp(26px,2.2vw+14px,36px)] leading-[1.15] text-white">
+              <h2 className="mt-3.5 text-[clamp(26px,2.2vw+14px,36px)] leading-[1.15] text-navy">
                 Engineering Experience Across Industries
               </h2>
-              <p className="mt-4 max-w-[40ch] text-[15px] leading-[1.65] text-[#a9bbd0]">
+              <p className="mt-4 max-w-[60ch] text-[15px] leading-[1.65] text-steel">
                 Our industry experience shows we understand different engineering environments —
                 not just different logos.
               </p>
 
-              <ul className="mt-9 flex flex-col border-t border-white/10">
+              <ul className="mt-9 flex flex-col border-t border-line">
                 {INDUSTRIES.map((ind, i) => (
-                  <li key={ind.key} className="border-b border-white/10">
+                  <li key={ind.key} className="border-b border-line">
                     <button
                       type="button"
                       onClick={() => {
                         activeRef.current = i;
                         setActive(i);
                       }}
-                      className="group flex w-full items-center gap-4 py-3 text-left"
+                      className="group flex w-full items-baseline gap-4 py-3 text-left"
                     >
                       <span
                         className={`font-mono text-[11px] tabular-nums transition-colors duration-300 ${
-                          i === active ? "text-[#6fb3ff]" : "text-[#4d6178]"
+                          i === active ? "text-blue" : "text-steel/60"
                         }`}
                       >
                         {String(i + 1).padStart(2, "0")}
                       </span>
                       <span
                         className={`text-[14.5px] transition-colors duration-300 ${
-                          i === active
-                            ? "font-semibold text-white"
-                            : "text-[#7a93ad] group-hover:text-[#c3d3e3]"
+                          i === active ? "font-semibold text-navy" : "text-steel group-hover:text-ink"
                         }`}
                       >
                         {ind.name}
+                      </span>
+                      <span
+                        className={`text-[13px] transition-colors duration-300 ${
+                          i === active ? "text-steel" : "text-steel/60 group-hover:text-steel"
+                        }`}
+                      >
+                        — {ind.blurb}
                       </span>
                     </button>
                   </li>
                 ))}
               </ul>
 
-              <div className="mt-6 flex items-center gap-4">
+              <div className="mt-6 flex items-center gap-2">
                 <div className="flex items-center gap-1.5" aria-hidden="true">
                   {INDUSTRIES.map((ind, i) => (
                     <span
                       key={ind.key}
                       className={`h-1.5 rounded-full transition-all duration-500 motion-reduce:transition-none ${
-                        i === active ? "w-6 bg-[#6fb3ff]" : "w-1.5 bg-white/15"
+                        i === active ? "w-6 bg-blue" : "w-1.5 bg-line"
                       }`}
                     />
                   ))}
                 </div>
-                <span className="font-mono text-xs tracking-[0.08em] text-[#7a93ad]">
+                <span className="font-mono text-xs tracking-[0.08em] text-steel">
                   {String(active + 1).padStart(2, "0")} / {String(COUNT).padStart(2, "0")}
                 </span>
               </div>
 
               {/* Same hint-caption treatment used across every interactive
-                  section on the page (mono, uppercase, small leading icon) —
-                  just recolored for this panel's dark background. */}
-              <div className="mt-3.5 inline-flex items-center gap-[7px] font-mono text-[10.5px] font-semibold uppercase tracking-[0.08em] text-[#6fe3c9]">
+                  section on the page (mono, uppercase, small leading icon). */}
+              <div className="mt-3.5 inline-flex items-center gap-[7px] font-mono text-[10.5px] font-semibold uppercase tracking-[0.08em] text-blue">
                 <svg width="10" height="14" viewBox="0 0 10 14" fill="none" className="flex-none">
                   <path d="M5 1v12M1 9l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
@@ -271,33 +282,38 @@ export default function Industries() {
                 stage rather than float in empty space (no photography yet).
                 Upcoming cards peek behind it in a diagonal cascade, scaled
                 down; the previous card drops away. */}
+            {/* Tweak marginLeft below to nudge the card stage closer to/
+                further from the text column, independent of the grid gap. */}
             <div
               ref={stageRef}
-              className="relative flex h-[min(82vh,720px)] w-full items-center justify-center"
+              style={{ marginLeft: "96px" }}
+              className="relative flex h-[min(60vh,480px)] w-full items-center justify-start"
             >
               {INDUSTRIES.map((ind, i) => {
                 const d = i - active;
+                // Cascade now reads purely along the X-axis (Y left at 0)
+                // instead of the old diagonal drift.
                 let transform = "translate(0,0) scale(1)";
                 let opacity = 1;
                 let z = 10;
                 if (d === 1) {
-                  transform = "translate(58px,-48px) scale(.87)";
+                  transform = "translate(70px,0) scale(.87)";
                   opacity = 0.7;
                   z = 9;
                 } else if (d === 2) {
-                  transform = "translate(106px,-88px) scale(.76)";
+                  transform = "translate(128px,0) scale(.76)";
                   opacity = 0.4;
                   z = 8;
                 } else if (d === 3) {
-                  transform = "translate(148px,-122px) scale(.66)";
+                  transform = "translate(178px,0) scale(.66)";
                   opacity = 0.18;
                   z = 7;
                 } else if (d === -1) {
-                  transform = "translate(-42px,40px) scale(.94)";
+                  transform = "translate(-56px,0) scale(.94)";
                   opacity = 0;
                   z = 5;
                 } else if (d !== 0) {
-                  transform = `translate(${d > 0 ? 188 : -74}px, ${d > 0 ? -160 : 60}px) scale(.55)`;
+                  transform = `translate(${d > 0 ? 226 : -100}px,0) scale(.55)`;
                   opacity = 0;
                   z = 1;
                 }
@@ -305,7 +321,7 @@ export default function Industries() {
                   <div
                     key={ind.key}
                     aria-hidden={i !== active}
-                    className="absolute h-full w-[min(94%,540px)] overflow-hidden rounded-[24px] shadow-[0_32px_70px_-24px_rgba(0,0,0,0.55)] transition-[transform,opacity] duration-[380ms] ease-out motion-reduce:transition-none motion-reduce:duration-0"
+                    className="absolute aspect-square h-full max-w-[90%] overflow-hidden rounded-[24px] shadow-[0_32px_70px_-24px_rgba(0,0,0,0.55)] transition-[transform,opacity] duration-[380ms] ease-out motion-reduce:transition-none motion-reduce:duration-0"
                     style={{ transform, opacity, zIndex: z, background: ind.gradient }}
                   >
                     <div className="absolute inset-0 bg-black/28" />

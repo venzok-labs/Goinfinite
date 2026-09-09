@@ -96,7 +96,7 @@ export default function Hero3D() {
       {failed && (
         <div className="absolute inset-0 flex items-center justify-center opacity-90">
           <svg viewBox="0 0 200 200" width="220">
-            <g fill="none" stroke="#1d6fbf" strokeWidth="1.5" opacity=".8">
+            <g fill="none" stroke="var(--blue)" strokeWidth="1.5" opacity=".8">
               <polygon points="100,20 170,60 170,140 100,180 30,140 30,60" />
               <polygon points="100,20 100,180" />
               <polygon points="30,60 170,140" />
