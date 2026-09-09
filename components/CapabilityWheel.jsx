@@ -41,19 +41,36 @@ const CATS = [
   },
 ];
 
+const DEFAULT_TITLE = "Engineering Capabilities";
+const DEFAULT_BODY =
+  "Six core disciplines carry a project from first concept through to a working machine on the shop floor — design, simulation, measurement, reverse engineering, manufacturing support and automation, all under one roof.";
+const REVERT_MS = 60000;
+
 /*
  * Real 3D spinning capability wheel (capability-wheel-3d package), adapted
  * from the vendor's standalone <script> snippet into a React component —
  * uses the `three` package already in this project instead of a second CDN
- * <script> tag, and the click-to-detail modal is now React state instead of
- * direct DOM manipulation.
+ * <script> tag.
+ *
+ * Tapping a segment no longer opens a popup: it writes straight into the
+ * right-side panel (title/body typed in character by character) and starts
+ * a 60s auto-revert back to the default panel, restarted on every new tap.
+ * All of that — including the typewriter — is done via direct DOM writes
+ * through refs rather than React state, matching the rest of this file's
+ * imperative style, and importantly so re-renders never interrupt the wheel:
+ * the disc keeps spinning continuously, selection or not.
  */
 export default function CapabilityWheel() {
   const stageRef = useRef(null);
-  const popoverRef = useRef(null);
   const [failed, setFailed] = useState(false);
-  const [active, setActive] = useState(null); // selected category, or null
-  const [visible, setVisible] = useState(false); // drives the entrance transition
+
+  const tagRef = useRef(null);
+  const indexRef = useRef(null);
+  const titleRef = useRef(null);
+  const bodyRef = useRef(null);
+  const hintRef = useRef(null);
+  const revertFillRef = useRef(null);
+  const timerLabelRef = useRef(null);
 
   useEffect(() => {
     let renderer;
@@ -71,6 +88,55 @@ export default function CapabilityWheel() {
       typeof window !== "undefined" &&
       window.matchMedia &&
       window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    // ---- right panel: typewriter + auto-revert (refs only, no React state,
+    // so typing a character never triggers a render and never touches the
+    // wheel's own animation loop) ----
+    const typeGen = { title: 0, body: 0 };
+    let revertTimer = null;
+    let tickInterval = null;
+    let selectionToken = 0;
+
+    function typeInto(el, text, speed, key) {
+      if (!el) return;
+      const myGen = ++typeGen[key];
+      el.textContent = "";
+      if (reduced) {
+        el.textContent = text;
+        return;
+      }
+      const caret = document.createElement("span");
+      caret.className = "cw-caret";
+      el.appendChild(caret);
+      let i = 0;
+      (function tick() {
+        if (typeGen[key] !== myGen) return; // superseded by a newer call on this element
+        if (i < text.length) {
+          caret.insertAdjacentText("beforebegin", text[i]);
+          i++;
+          setTimeout(tick, speed);
+        } else {
+          caret.remove();
+        }
+      })();
+    }
+
+    function restartRevertBar() {
+      const el = revertFillRef.current;
+      if (!el) return;
+      el.style.transition = "none";
+      el.style.transform = "scaleX(1)";
+      void el.offsetWidth; // force reflow so the transition below replays from scratch
+      el.style.transition = `transform ${REVERT_MS}ms linear`;
+      el.style.transform = "scaleX(0)";
+    }
+
+    cleanupFns.push(() => {
+      if (revertTimer) clearTimeout(revertTimer);
+      if (tickInterval) clearInterval(tickInterval);
+      typeGen.title++;
+      typeGen.body++;
+    });
 
     (async () => {
       try {
@@ -92,6 +158,8 @@ export default function CapabilityWheel() {
         // disc in the official palette instead of a bespoke blue pair.
         const COLOR_TOP = new THREE.Color("#1877f2");
         const COLOR_BOTTOM = new THREE.Color("#0f4c81");
+        const HOVER_EMISSIVE = 0x0a2e5c;
+        const ACTIVE_EMISSIVE = 0x1d6fbf;
 
         function pt(r, a) {
           return { x: r * Math.cos(a), y: r * Math.sin(a) };
@@ -201,6 +269,7 @@ export default function CapabilityWheel() {
           const mat = new THREE.MeshStandardMaterial({ color, roughness: 0.55, metalness: 0.08 });
           const mesh = new THREE.Mesh(geo, mat);
           mesh.userData.cat = cat;
+          mesh.userData.index = i;
           discGroup.add(mesh);
           wedgeMeshes.push(mesh);
           disposables.push(geo, mat);
@@ -247,11 +316,12 @@ export default function CapabilityWheel() {
         window.addEventListener("resize", resizeHandler);
 
         const SPIN_SPEED = (2 * Math.PI) / 90;
-        let paused = false;
 
         // ---- drag-to-rotate by hand, with momentum ----
         // idleSpin: true = steady auto-spin. false while actively dragging
         // OR while a drag's momentum is still decaying back toward zero.
+        // Selecting a segment never touches any of this — the disc spins
+        // continuously regardless of what's shown in the side panel.
         let idleSpin = true;
         let isDragging = false;
         let dragVel = 0;
@@ -267,7 +337,7 @@ export default function CapabilityWheel() {
           raf = requestAnimationFrame(animate);
           const dt = Math.min((now - lastT) / 1000, 0.05);
           lastT = now;
-          if (!paused && !reduced) {
+          if (!reduced) {
             if (idleSpin) {
               discGroup.rotation.z += SPIN_SPEED * dt;
             } else if (!isDragging) {
@@ -299,19 +369,91 @@ export default function CapabilityWheel() {
           return hits.length ? hits[0].object : null;
         }
 
+        // A wedge's emissive glow now reflects two independent states —
+        // hovered and actively-selected — so picking a segment doesn't get
+        // silently erased the next time the pointer happens to leave it.
         let hovered = null;
+        let activeMesh = null;
+        function applyEmissive(mesh) {
+          if (!mesh) return;
+          if (mesh === activeMesh) mesh.material.emissive.setHex(ACTIVE_EMISSIVE);
+          else if (mesh === hovered) mesh.material.emissive.setHex(HOVER_EMISSIVE);
+          else mesh.material.emissive.setHex(0x000000);
+        }
         function setHover(hit) {
           if (hit === hovered) return;
-          if (hovered) hovered.material.emissive.setHex(0x000000);
+          const prev = hovered;
           hovered = hit;
-          if (hovered) hovered.material.emissive.setHex(0x0a2e5c);
+          applyEmissive(prev);
+          applyEmissive(hovered);
           stage.classList.toggle("hoverable", !!hovered);
+        }
+        function setActiveMesh(mesh) {
+          const prev = activeMesh;
+          activeMesh = mesh;
+          applyEmissive(prev);
+          applyEmissive(activeMesh);
+        }
+
+        function renderDefault() {
+          const token = ++selectionToken;
+          if (revertTimer) clearTimeout(revertTimer);
+          if (tickInterval) clearInterval(tickInterval);
+          setActiveMesh(null);
+          if (tagRef.current) tagRef.current.textContent = "Overview";
+          if (indexRef.current) indexRef.current.textContent = "";
+          typeInto(titleRef.current, DEFAULT_TITLE, 22, "title");
+          typeInto(bodyRef.current, DEFAULT_BODY, 10, "body");
+          if (hintRef.current) hintRef.current.style.display = "flex";
+          if (revertFillRef.current) {
+            revertFillRef.current.style.transition = "none";
+            revertFillRef.current.style.transform = "scaleX(1)";
+          }
+          if (timerLabelRef.current) {
+            timerLabelRef.current.style.opacity = "0";
+            timerLabelRef.current.textContent = "";
+          }
+          return token;
+        }
+
+        function selectCategory(cat, idx, mesh) {
+          const token = ++selectionToken;
+          if (revertTimer) clearTimeout(revertTimer);
+          if (tickInterval) clearInterval(tickInterval);
+          setActiveMesh(mesh);
+
+          if (tagRef.current) tagRef.current.textContent = cat.label;
+          if (indexRef.current) {
+            indexRef.current.textContent = `${String(idx + 1).padStart(2, "0")} / ${String(CATS.length).padStart(2, "0")}`;
+          }
+          typeInto(titleRef.current, cat.label, 26, "title");
+          typeInto(bodyRef.current, cat.detail, 10, "body");
+          if (hintRef.current) hintRef.current.style.display = "none";
+
+          restartRevertBar();
+          if (timerLabelRef.current) timerLabelRef.current.style.opacity = "1";
+
+          let remaining = 60;
+          const setLabel = () => {
+            if (timerLabelRef.current) timerLabelRef.current.textContent = `auto-clears in ${remaining}s`;
+          };
+          setLabel();
+          tickInterval = setInterval(() => {
+            remaining -= 1;
+            if (token !== selectionToken || remaining <= 0) {
+              clearInterval(tickInterval);
+              return;
+            }
+            setLabel();
+          }, 1000);
+
+          revertTimer = setTimeout(() => {
+            if (token !== selectionToken) return;
+            renderDefault();
+          }, REVERT_MS);
         }
 
         function onPointerDown(ev) {
-          // starting a drag (rotating the wheel by hand) closes any open
-          // popup instead of leaving it stranded while the wheel spins
-          stage._cw3RequestClose?.();
           isDragging = true;
           idleSpin = false;
           moved = false;
@@ -344,13 +486,9 @@ export default function CapabilityWheel() {
           isDragging = false;
           stage.classList.remove("grabbing");
           if (!moved) {
-            // a tap/click, not a drag — open that segment's detail
+            // a tap/click, not a drag — show that segment's info in the panel
             const hit = pickWedge(ev);
-            if (hit) {
-              paused = true;
-              setActive(hit.userData.cat);
-              return;
-            }
+            if (hit) selectCategory(hit.userData.cat, hit.userData.index, hit);
           }
           // drag released with motion — let momentum in animate() carry it
         }
@@ -371,11 +509,6 @@ export default function CapabilityWheel() {
           window.removeEventListener("pointercancel", endDrag);
         });
 
-        // exposed so closing the React modal can resume the spin
-        stage._cw3Resume = () => {
-          paused = false;
-        };
-
         cleanupFns.push(() => {
           disposables.forEach((d) => d.dispose && d.dispose());
           // Without this, React 18 dev-mode's double-invoked effect (mount
@@ -387,7 +520,10 @@ export default function CapabilityWheel() {
             stage.removeChild(renderer.domElement);
           }
         });
+
+        renderDefault();
       } catch (err) {
+        console.error("CapabilityWheel setup failed:", err);
         setFailed(true);
       }
     })();
@@ -401,109 +537,61 @@ export default function CapabilityWheel() {
     };
   }, []);
 
-  function closeModal() {
-    setVisible(false);
-    setActive(null);
-    stageRef.current?._cw3Resume?.();
-  }
-
-  // Let the wheel's drag-start request a close (see onPointerDown above).
-  useEffect(() => {
-    if (stageRef.current) stageRef.current._cw3RequestClose = closeModal;
-  }, []);
-
-  // Entrance animation: mount at scale/opacity 0, flip to visible a frame
-  // later so the transition actually has something to animate from.
-  useEffect(() => {
-    if (!active) return;
-    setVisible(false);
-    const raf = requestAnimationFrame(() => setVisible(true));
-    return () => cancelAnimationFrame(raf);
-  }, [active]);
-
-  // Close on: Escape, any click/tap outside the bubble, or scrolling the
-  // page (the mobile case — there's no drag-to-rotate gesture to hook there,
-  // so scroll is the equivalent "the visitor moved on" signal).
-  useEffect(() => {
-    if (!active) return;
-    function onKey(ev) {
-      if (ev.key === "Escape") closeModal();
-    }
-    function onPointerDownOutside(ev) {
-      if (popoverRef.current && !popoverRef.current.contains(ev.target)) closeModal();
-    }
-    function onScroll() {
-      closeModal();
-    }
-    document.addEventListener("keydown", onKey);
-    // deferred so the click that opened this popup doesn't also close it
-    const id = window.setTimeout(() => {
-      document.addEventListener("pointerdown", onPointerDownOutside);
-      window.addEventListener("scroll", onScroll, { passive: true });
-    }, 0);
-    return () => {
-      window.clearTimeout(id);
-      document.removeEventListener("keydown", onKey);
-      document.removeEventListener("pointerdown", onPointerDownOutside);
-      window.removeEventListener("scroll", onScroll);
-    };
-  }, [active]);
-
   if (failed) return null;
 
   return (
-    <div className="flex flex-col items-center px-5 pt-6 pb-2">
-      <div aria-hidden="true" className="relative z-[2] mb-2.5 flex flex-col items-center gap-2">
-        <span className="absolute inset-0 animate-[cw3Pulse_1.6s_ease-out_infinite] rounded-full bg-blue motion-reduce:animate-none" />
-        <span className="relative flex h-[34px] w-[34px] animate-[cw3Bounce_1.6s_ease-in-out_infinite] items-center justify-center rounded-full bg-[linear-gradient(145deg,var(--blue),var(--panel-1))] shadow-[0_6px_16px_-6px_rgba(11,42,74,0.5)] motion-reduce:animate-none">
-          <svg viewBox="0 0 20 20" width="16" height="16">
-            <path
-              d="M10 4 V14 M5 10 L10 15 L15 10"
-              fill="none"
-              stroke="#ffffff"
-              strokeWidth="2.4"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </span>
-        {/* Same hint-caption treatment (mono, uppercase, blue) used across
-            every interactive section on the page, so they read as one
-            family of "here's how to use this" affordances. */}
-        <span className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.08em] text-blue">
-          Tap a segment
-        </span>
-      </div>
-      {/* cursor/hover state here is toggled imperatively via classList from
-          the Three.js pointer handlers above (outside React render), so
-          `.cw-stage`/`.grabbing`/`.hoverable` stay plain CSS (globals.css)
-          rather than conditional Tailwind classes. */}
-      <div className="cw-stage relative aspect-square w-[min(520px,90vw)] cursor-grab touch-none" ref={stageRef} />
-
-      {active && (
-        <div
-          ref={popoverRef}
-          className={`fixed left-1/2 top-[46%] z-[200] w-[min(320px,calc(100vw-40px))] -translate-x-1/2 -translate-y-1/2 rounded-[18px] border border-[#bcdcfa] bg-[#e3f2fd] p-[26px_24px_24px] text-center opacity-0 shadow-[0_20px_44px_-14px_rgba(11,42,74,0.35)] transition-[opacity,transform] duration-[240ms] ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${
-            visible ? "scale-100 opacity-100" : "scale-[0.92]"
-          }`}
-          role="dialog"
-          aria-modal="false"
-          aria-labelledby="cw3-title"
-        >
-          <button
-            className="absolute top-2 right-2.5 h-7 w-7 rounded-full border-0 bg-transparent text-xl leading-none text-[#5c85ab] hover:bg-[rgba(11,42,74,0.08)] hover:text-navy"
-            aria-label="Close"
-            onClick={closeModal}
-          >
-            ×
-          </button>
-          <h3 id="cw3-title" className="mb-2 text-[19px] text-navy">
-            {active.label}
-          </h3>
-          <p className="text-[14.5px] leading-normal text-[#2c4f70]">{active.detail}</p>
-          <span className="absolute -bottom-2 left-1/2 h-4 w-4 -translate-x-1/2 rotate-45 rounded-[0_0_4px_0] border-b border-r border-[#bcdcfa] bg-[#e3f2fd]" />
+    <div className="grid grid-cols-[minmax(280px,440px)_1fr] items-center gap-12 px-5 pt-6 pb-2 max-[900px]:grid-cols-1 max-[900px]:justify-items-center max-[900px]:gap-7">
+      <div className="flex flex-col items-center gap-2">
+        <div aria-hidden="true" className="relative z-[2] mb-1 flex flex-col items-center gap-2">
+          <span className="absolute inset-0 animate-[cw3Pulse_1.6s_ease-out_infinite] rounded-full bg-blue motion-reduce:animate-none" />
+          <span className="relative flex h-[34px] w-[34px] animate-[cw3Bounce_1.6s_ease-in-out_infinite] items-center justify-center rounded-full bg-[linear-gradient(145deg,var(--blue),var(--panel-1))] shadow-[0_6px_16px_-6px_rgba(11,42,74,0.5)] motion-reduce:animate-none">
+            <svg viewBox="0 0 20 20" width="16" height="16">
+              <path
+                d="M10 4 V14 M5 10 L10 15 L15 10"
+                fill="none"
+                stroke="#ffffff"
+                strokeWidth="2.4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </span>
+          {/* Same hint-caption treatment (mono, uppercase, blue) used across
+              every interactive section on the page, so they read as one
+              family of "here's how to use this" affordances. */}
+          <span className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.08em] text-blue">
+            Tap a segment
+          </span>
         </div>
-      )}
+        {/* cursor/hover state here is toggled imperatively via classList from
+            the Three.js pointer handlers above (outside React render), so
+            `.cw-stage`/`.grabbing`/`.hoverable` stay plain CSS (globals.css)
+            rather than conditional Tailwind classes. */}
+        <div className="cw-stage relative aspect-square w-[min(420px,90vw)] cursor-grab touch-none" ref={stageRef} />
+      </div>
+
+      <div className="relative w-full max-w-[560px] overflow-hidden rounded-[20px] border border-line bg-white p-[30px_32px_26px] shadow-[0_20px_44px_-28px_rgba(11,42,74,0.28)]">
+        <div className="mb-3.5 flex items-center justify-between">
+          <span ref={tagRef} className="font-mono text-[11px] font-semibold uppercase tracking-[0.08em] text-blue" />
+          <span ref={indexRef} className="text-[11px] text-steel [font-variant-numeric:tabular-nums]" />
+        </div>
+        <h3 ref={titleRef} className="mb-3 min-h-[29px] text-[22px] text-navy" />
+        <p ref={bodyRef} className="min-h-[96px] text-[15px] leading-relaxed text-steel" />
+        <div ref={hintRef} className="mt-4 flex items-center gap-2 text-[12.5px] font-semibold text-blue">
+          <span>→</span> Select a segment on the wheel to see its tools &amp; experience
+        </div>
+        <div className="absolute inset-x-0 bottom-0 h-[3px] bg-line">
+          <div
+            ref={revertFillRef}
+            className="h-full origin-left bg-[linear-gradient(90deg,var(--blue),var(--blue-dark))]"
+            style={{ transform: "scaleX(1)" }}
+          />
+        </div>
+        <span
+          ref={timerLabelRef}
+          className="pointer-events-none absolute right-3.5 bottom-2 text-[10px] text-steel opacity-0 transition-opacity duration-200 [font-variant-numeric:tabular-nums]"
+        />
+      </div>
     </div>
   );
 }

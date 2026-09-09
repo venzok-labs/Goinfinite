@@ -2,6 +2,10 @@
 
 import { useEffect, useRef } from "react";
 
+function easeOutCubic(t) {
+  return 1 - Math.pow(1 - t, 3);
+}
+
 /*
  * Shared drag-to-swipe carousel — cards snap into place one at a time,
  * dragged with a mouse or swiped on touch (native overflow-x scrolling
@@ -19,17 +23,15 @@ import { useEffect, useRef } from "react";
  *    from the last card wraps around to the first, and Prev from the first
  *    card wraps to the last — the carousel loops rather than dead-ending.
  *
- * `paddingClassName` must give the track side padding equal to
- * `calc(50% - half the card's rendered width)` at every breakpoint the card
- * itself changes width at (matching `cardClassName`'s own width/breakpoint
- * pair) — that's what gives every card, including the first and last,
- * genuine room to reach a fully centered scroll position. Without it, the
- * last couple of cards can never scroll far enough to center and the
- * browser clamps several different targets onto the same position, which
- * reads as the carousel stalling or jumping. It's a caller-supplied literal
- * class string rather than computed from a numeric prop because Tailwind
- * only generates arbitrary-value classes it can find as literal text in
- * source — a runtime-interpolated `px-[calc(...)]` string never matches.
+ * `paddingClassName` is a small fixed edge inset (not a percentage) so the
+ * first card rests flush at the start on load — no big empty gap before it
+ * — and the last card ends flush at the finish. Earlier this used
+ * `calc(50% - half a card)` padding to let every card reach a fully
+ * *centered* scroll position, but at wide viewports that padding itself
+ * became a large empty margin before the first card on initial load, which
+ * read as broken. `scrollByCard` still aims each target at the viewport's
+ * center; the browser simply clamps that to the nearest valid scroll
+ * position at either end, which is exactly the flush start/end we want.
  */
 export default function CardCarousel({
   items,
@@ -37,12 +39,13 @@ export default function CardCarousel({
   renderCard,
   hint,
   cardClassName = "h-[300px] w-[340px] max-[560px]:w-[86vw]",
-  paddingClassName = "px-[calc(50%-170px)] max-[560px]:px-[calc(50%-43vw)]",
+  paddingClassName = "pl-8 pr-8 max-[720px]:pl-5 max-[720px]:pr-5",
 }) {
   const carouselRef = useRef(null);
   const cardRefs = useRef([]);
-  const dotRefs = useRef([]);
+  const thumbRef = useRef(null);
   const activeIndexRef = useRef(0);
+  const scrollAnimRef = useRef(null);
   const count = items.length;
 
   useEffect(() => {
@@ -93,10 +96,20 @@ export default function CardCarousel({
       });
 
       cards.forEach((card, i) => card?.classList.toggle("shadow-[0_26px_54px_-18px_rgba(11,42,74,0.5)]", i === nearestIdx));
-      dotRefs.current.forEach((d, i) => d?.classList.toggle("w-5", i === nearestIdx));
-      dotRefs.current.forEach((d, i) => d?.classList.toggle("bg-blue", i === nearestIdx));
-      dotRefs.current.forEach((d, i) => d?.classList.toggle("bg-line", i !== nearestIdx));
       activeIndexRef.current = nearestIdx;
+      updateThumb();
+    }
+    function updateThumb() {
+      const thumb = thumbRef.current;
+      if (!thumb) return;
+      const maxScroll = carousel.scrollWidth - carousel.clientWidth;
+      const progress = maxScroll > 0 ? carousel.scrollLeft / maxScroll : 0;
+      // Thumb width mirrors how much of the whole track one screenful
+      // covers, same idea as a native scrollbar — floored so it stays
+      // grabbable even when there are many cards.
+      const widthPct = Math.max(18, (carousel.clientWidth / carousel.scrollWidth) * 100);
+      thumb.style.width = `${widthPct}%`;
+      thumb.style.left = `${progress * (100 - widthPct)}%`;
     }
     function requestFocusUpdate() {
       if (focusRaf) return;
@@ -104,6 +117,7 @@ export default function CardCarousel({
     }
     carousel.addEventListener("scroll", requestFocusUpdate, { passive: true });
     window.addEventListener("resize", requestFocusUpdate);
+    updateThumb();
 
     const entranceIo = new IntersectionObserver(
       (entries) => {
@@ -128,35 +142,68 @@ export default function CardCarousel({
     entranceIo.observe(carousel);
 
     let isDown = false;
+    let dragged = false;
     let startX = 0;
     let startScroll = 0;
     function onDown(e) {
       isDown = true;
+      dragged = false;
       carousel.classList.add("cursor-grabbing");
       startX = e.pageX;
       startScroll = carousel.scrollLeft;
+      // Cards are whole-card <Link>s with a background image — without this,
+      // clicking and moving the mouse over one starts the browser's native
+      // "drag a ghost image out of the link" gesture instead of firing
+      // continuous mousemove events, which silently swallows our own
+      // drag-to-scroll (clicking alone still worked, dragging didn't).
+      e.preventDefault();
     }
-    function onUp() {
+    function onUp(e) {
       if (!isDown) return;
       isDown = false;
       carousel.classList.remove("cursor-grabbing");
+      // A drag that actually moved the track shouldn't also fire the card's
+      // link navigation underneath the pointer.
+      if (dragged && e.target.closest("a")) e.preventDefault();
       requestFocusUpdate();
     }
     function onMove(e) {
       if (!isDown) return;
-      carousel.scrollLeft = startScroll - (e.pageX - startX);
+      const delta = e.pageX - startX;
+      if (Math.abs(delta) > 4) dragged = true;
+      carousel.scrollLeft = startScroll - delta;
+    }
+    function onClickCapture(e) {
+      if (dragged) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
     }
     carousel.addEventListener("mousedown", onDown);
     window.addEventListener("mouseup", onUp);
     window.addEventListener("mousemove", onMove);
+    carousel.addEventListener("click", onClickCapture, true);
+
+    // Lets a trackpad/mouse wheel scroll the track horizontally even though
+    // wheel input is normally vertical — without this, hovering the
+    // carousel and scrolling just scrolls the page past it instead.
+    function onWheel(e) {
+      if (Math.abs(e.deltaX) >= Math.abs(e.deltaY)) return;
+      e.preventDefault();
+      carousel.scrollLeft += e.deltaY;
+    }
+    carousel.addEventListener("wheel", onWheel, { passive: false });
 
     return () => {
       if (focusRaf) cancelAnimationFrame(focusRaf);
+      if (scrollAnimRef.current) cancelAnimationFrame(scrollAnimRef.current);
       carousel.removeEventListener("scroll", requestFocusUpdate);
       window.removeEventListener("resize", requestFocusUpdate);
       carousel.removeEventListener("mousedown", onDown);
       window.removeEventListener("mouseup", onUp);
       window.removeEventListener("mousemove", onMove);
+      carousel.removeEventListener("click", onClickCapture, true);
+      carousel.removeEventListener("wheel", onWheel);
       entranceIo.disconnect();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -171,81 +218,107 @@ export default function CardCarousel({
 
     const targetCard = cards[target];
     if (!carousel || !targetCard) return;
-    // Center the target card by direct computation, not scrollIntoView —
-    // cards snap centered (`scroll-snap-align: center`) in a viewport much
-    // wider than one card, so this measures the card's own real layout
-    // position rather than assuming a uniform `index * step` offset.
-    const left = targetCard.offsetLeft + targetCard.offsetWidth / 2 - carousel.clientWidth / 2;
-    carousel.scrollTo({ left, behavior: "smooth" });
+    // Align the target card's own left edge flush with the frame's visible
+    // start (minus the edge inset), not centered in the frame — this frame
+    // is wide enough to show several cards at once, so "center the target
+    // card" barely moves scrollLeft for the first couple of clicks, which
+    // read as the buttons doing nothing. Index 0 always rests at scrollLeft
+    // 0 so the edge inset stays visible, matching every other section.
+    // Measured via getBoundingClientRect, not offsetLeft — offsetLeft is
+    // relative to the card's nearest *positioned* ancestor, which isn't
+    // necessarily this carousel, so it isn't reliably "distance from the
+    // scrollable frame's own edge."
+    const insetLeft = parseFloat(getComputedStyle(carousel).paddingLeft) || 0;
+    const cardOffsetInScroller = targetCard.getBoundingClientRect().left - carousel.getBoundingClientRect().left + carousel.scrollLeft;
+    const left = target === 0 ? 0 : cardOffsetInScroller - insetLeft;
+
+    // Animated by hand rather than `scrollTo({behavior:"smooth"})` — native
+    // smooth scrolling is unreliable together with `scroll-snap-type` on
+    // this track in Chromium browsers: the snap logic can cancel the
+    // native animation before it moves at all, which read as the buttons
+    // doing nothing. Driving scrollLeft directly every frame sidesteps that.
+    if (scrollAnimRef.current) cancelAnimationFrame(scrollAnimRef.current);
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const maxLeft = carousel.scrollWidth - carousel.clientWidth;
+    const endLeft = Math.max(0, Math.min(left, maxLeft));
+    if (reduced) {
+      carousel.scrollLeft = endLeft;
+      return;
+    }
+    const startLeft = carousel.scrollLeft;
+    const delta = endLeft - startLeft;
+    const duration = 420;
+    const startTime = performance.now();
+    function step(now) {
+      const t = Math.min(1, (now - startTime) / duration);
+      carousel.scrollLeft = startLeft + delta * easeOutCubic(t);
+      scrollAnimRef.current = t < 1 ? requestAnimationFrame(step) : null;
+    }
+    scrollAnimRef.current = requestAnimationFrame(step);
   }
 
   return (
     <div>
-      {/* Side padding equals half the viewport minus half a card, not a
-          fixed inset — that's what lets every card, including the first and
-          last, actually reach a fully-centered scroll position. */}
-      <div
-        ref={carouselRef}
-        className={`flex cursor-grab snap-x snap-proximity gap-[22px] overflow-x-auto pb-5 pt-1.5 [-ms-overflow-style:none] [scrollbar-width:none] select-none [&::-webkit-scrollbar]:hidden ${paddingClassName}`}
-      >
-        {items.map((item, i) => (
-          <article
-            key={getKey(item)}
-            ref={(el) => (cardRefs.current[i] = el)}
-            className={`group relative flex flex-none snap-center items-end overflow-hidden rounded-2xl opacity-0 shadow-[0_14px_30px_-20px_rgba(11,42,74,0.35)] transition-[transform,opacity,box-shadow] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${cardClassName}`}
-            style={{ transform: "translateY(24px) scale(0.9)" }}
-          >
-            {renderCard(item, i)}
-          </article>
-        ))}
-      </div>
+      {/* The track's side padding (calc(50% - half a card)) is a
+          percentage, and percentage padding always resolves against the
+          *containing block's* width, never the padded element's own
+          max-width — so max-w-[1180px] can't go directly on the padded,
+          scrollable element itself. Putting it here on this plain outer
+          wrapper instead makes the inner track's 50% resolve against an
+          already-capped ≤1180px box; without this indirection, the track's
+          own required padding (computed against the raw viewport) could
+          exceed 1180px and force the box to grow past its own max-width
+          just to fit that padding — exactly what was happening before. */}
+      <div className="mx-auto max-w-[1180px]">
+        <div
+          ref={carouselRef}
+          className={`flex cursor-grab snap-x snap-proximity gap-[22px] overflow-x-auto pb-5 pt-1.5 [-ms-overflow-style:none] [scrollbar-width:none] select-none [&::-webkit-scrollbar]:hidden ${paddingClassName}`}
+        >
+          {items.map((item, i) => (
+            <article
+              key={getKey(item)}
+              ref={(el) => (cardRefs.current[i] = el)}
+              className={`group relative flex flex-none snap-center items-end overflow-hidden rounded-2xl opacity-0 shadow-[0_14px_30px_-20px_rgba(11,42,74,0.35)] transition-[transform,opacity,box-shadow] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${cardClassName}`}
+              style={{ transform: "translateY(24px) scale(0.9)" }}
+            >
+              {renderCard(item, i)}
+            </article>
+          ))}
+        </div>
 
-      <div className="wrap">
-        <div className="mt-6 flex items-center justify-center gap-3.5">
+        {/* Sits flush under the cards (no gap, no pill) — a thin native-scrollbar-style
+            track spanning the same 1180px width as the cards above, not the .wrap's own
+            padding, so its ends line up exactly with the first/last card's edges. */}
+        <div className="mt-1 flex items-center gap-2 px-1">
           <button
             type="button"
             aria-label="Previous"
             onClick={() => scrollByCard(-1)}
-            className="group/btn flex h-11 w-11 items-center justify-center rounded-full border border-line bg-white text-navy transition-[border-color,color,transform,box-shadow] duration-200 [transition-timing-function:cubic-bezier(0.34,1.56,0.64,1)] hover:-translate-y-0.5 hover:scale-[1.06] hover:border-blue hover:text-blue hover:shadow-[0_10px_22px_-12px_rgba(29,111,191,0.45)] active:translate-y-0 active:scale-[0.94] active:shadow-none"
+            className="flex h-5 w-5 flex-none items-center justify-center text-steel transition-colors duration-200 hover:text-blue"
           >
-            <svg
-              width="16"
-              height="12"
-              viewBox="0 0 16 12"
-              fill="none"
-              className="transition-transform duration-200 [transition-timing-function:cubic-bezier(0.34,1.56,0.64,1)] group-hover/btn:-translate-x-0.5 group-hover/btn:scale-110"
-            >
-              <path d="M15 6H1M6 1 1 6l5 5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+            <svg width="7" height="10" viewBox="0 0 7 10" fill="none">
+              <path d="M6 1 1 5l5 4V1z" fill="currentColor" />
             </svg>
           </button>
+
+          <div className="relative h-1 flex-1 overflow-hidden rounded-full bg-line">
+            <div ref={thumbRef} className="absolute inset-y-0 rounded-full bg-blue transition-[left,width] duration-200 [transition-timing-function:cubic-bezier(0.22,1,0.36,1)]" />
+          </div>
+
           <button
             type="button"
             aria-label="Next"
             onClick={() => scrollByCard(1)}
-            className="group/btn flex h-11 w-11 items-center justify-center rounded-full border border-line bg-white text-navy transition-[border-color,color,transform,box-shadow] duration-200 [transition-timing-function:cubic-bezier(0.34,1.56,0.64,1)] hover:-translate-y-0.5 hover:scale-[1.06] hover:border-blue hover:text-blue hover:shadow-[0_10px_22px_-12px_rgba(29,111,191,0.45)] active:translate-y-0 active:scale-[0.94] active:shadow-none"
+            className="flex h-5 w-5 flex-none items-center justify-center text-steel transition-colors duration-200 hover:text-blue"
           >
-            <svg
-              width="16"
-              height="12"
-              viewBox="0 0 16 12"
-              fill="none"
-              className="transition-transform duration-200 [transition-timing-function:cubic-bezier(0.34,1.56,0.64,1)] group-hover/btn:translate-x-0.5 group-hover/btn:scale-110"
-            >
-              <path d="M1 6h14M10 1l5 5-5 5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+            <svg width="7" height="10" viewBox="0 0 7 10" fill="none">
+              <path d="M1 1v8l5-4-5-4z" fill="currentColor" />
             </svg>
           </button>
         </div>
+      </div>
 
-        <div className="mt-4 flex items-center justify-center gap-1.5" aria-hidden="true">
-          {items.map((item, i) => (
-            <span
-              key={getKey(item)}
-              ref={(el) => (dotRefs.current[i] = el)}
-              className={`h-1.5 rounded-full transition-all duration-300 ${i === 0 ? "w-5 bg-blue" : "w-1.5 bg-line"}`}
-            />
-          ))}
-        </div>
-
+      <div className="wrap">
         {hint && (
           <div className="mt-3.5 flex justify-center">
             <span className="inline-flex items-center gap-[7px] font-mono text-[10.5px] font-semibold uppercase tracking-[0.08em] text-blue">

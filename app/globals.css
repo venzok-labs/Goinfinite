@@ -125,6 +125,13 @@
   }
 }
 
+/* CapabilityWheel's right-side info panel: blinking typewriter caret. */
+@keyframes cwCaretBlink {
+  50% {
+    opacity: 0;
+  }
+}
+
 /*
  * This is a committed single-theme (light) brand design, not a light/dark pair:
  * white base + blue/navy accents throughout, regardless of the visitor's OS
@@ -277,5 +284,15 @@
   }
   .cw-stage.hoverable canvas {
     cursor: pointer;
+  }
+
+  .cw-caret {
+    display: inline-block;
+    width: 2px;
+    height: 1em;
+    margin-left: 2px;
+    vertical-align: -2px;
+    background: var(--blue);
+    animation: cwCaretBlink 0.9s steps(1) infinite;
   }
 }

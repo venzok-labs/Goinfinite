@@ -11,7 +11,10 @@ export default function Hero() {
           variants here since they were designed for a light background. */}
       <div className="grid min-h-[540px] grid-cols-[1.05fr_0.95fr] bg-nav-bg max-[900px]:min-h-0 max-[900px]:grid-cols-1">
         <div
-          className="reveal in flex min-w-0 flex-col justify-center pt-7 pr-[clamp(8px,1.5vw,16px)] pb-11 pl-[clamp(24px,5vw,64px)]"
+          // pl floor matches every other section's mobile inset (the shared
+          // `.wrap` class resolves to 20px there) — this used a bespoke
+          // clamp starting at 24px, 4px further right than everywhere else.
+          className="reveal in flex min-w-0 flex-col justify-center pt-7 pr-[clamp(8px,1.5vw,16px)] pb-11 pl-[clamp(20px,5vw,64px)]"
         >
           <Logo size={40} onDark className="mb-4" />
           <div className="eyebrow text-[14.5px] text-[#bcd7f4]">

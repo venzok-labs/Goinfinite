@@ -189,7 +189,7 @@ export default function Industries() {
       </div>
 
       {/* ---------- Desktop: fixed-height panel, wheel-driven story ---------- */}
-      <div className="relative hidden h-screen min-[901px]:flex flex-col justify-center overflow-hidden bg-white">
+      <div className="relative hidden h-screen min-[901px]:flex flex-col items-center justify-center overflow-hidden bg-white">
         {/* Faint background texture — the panel is much taller than the
             content it holds, so this keeps the surrounding space from
             reading as empty rather than deliberate. */}
@@ -198,7 +198,15 @@ export default function Industries() {
           className="pointer-events-none absolute inset-0 opacity-[0.04] bg-[repeating-linear-gradient(45deg,#0b2a4a_0px,#0b2a4a_1px,transparent_1px,transparent_28px)]"
         />
 
-        <div className="grid grid-cols-[46%_54%] items-center gap-6 px-8 max-[1100px]:gap-5 max-[720px]:px-5">
+        {/* `.wrap` (not ad hoc px-*) so this column starts at the exact same
+            x-position as every other section's text, including the Hero.
+            `w-full` matters here: as a flex child (this panel is `flex
+            flex-col`) without it, `.wrap`'s mx-auto centers within a
+            shrink-to-fit width instead of the full flex-container width —
+            and shrink-to-fit combined with this element's own percentage
+            grid-template-columns is circular/ill-defined, so the whole
+            thing rendered far narrower than 1180px and badly off-center. */}
+        <div className="wrap w-full grid grid-cols-[46%_54%] items-center gap-6 max-[1100px]:gap-5">
             {/* LEFT — static text plus a full jump-to-any-industry list, so
                 the column doesn't run out of content halfway down. Clicking
                 a row jumps straight to it (independent of the wheel stepper
@@ -281,12 +289,11 @@ export default function Industries() {
             {/* RIGHT — one portrait card at a time, enlarged to dominate the
                 stage rather than float in empty space (no photography yet).
                 Upcoming cards peek behind it in a diagonal cascade, scaled
-                down; the previous card drops away. */}
-            {/* Tweak marginLeft below to nudge the card stage closer to/
-                further from the text column, independent of the grid gap. */}
+                down; the previous card drops away. Sits flush against the
+                text column (just the grid's own gap-6) — the old 96px
+                marginLeft push left a wide dead-space gap between the two. */}
             <div
               ref={stageRef}
-              style={{ marginLeft: "96px" }}
               className="relative flex h-[min(60vh,480px)] w-full items-center justify-start"
             >
               {INDUSTRIES.map((ind, i) => {
