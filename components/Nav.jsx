@@ -3,12 +3,12 @@ import Logo from "./Logo";
 import ContactTrigger from "./ContactTrigger";
 
 const LINKS = [
-  { href: "/#about", label: "About" },
+  { href: "/", label: "Home" },
   { href: "/services", label: "Services" },
-  { href: "/#industries", label: "Industries" },
   { href: "/#capabilities", label: "Capabilities" },
+  { href: "/#industries", label: "Industries" },
+  { href: "/#about", label: "About" },
   { href: "/#projects", label: "Projects" },
-  { href: "/#insights", label: "Insights" },
 ];
 
 export default function Nav() {
@@ -29,16 +29,9 @@ export default function Nav() {
               {l.label}
             </Link>
           ))}
-          <ContactTrigger className="relative text-sm font-medium text-ink after:absolute after:-bottom-[22px] after:left-0 after:right-0 after:h-0.5 after:origin-center after:scale-x-0 after:bg-blue after:transition-transform after:duration-200 hover:text-blue hover:after:scale-x-100">
-            Contact
-          </ContactTrigger>
         </div>
 
-        <div className="flex flex-none items-center gap-3.5">
-          <ContactTrigger className="hidden text-[13px] text-steel min-[980px]:inline">
-            +91 · South India
-          </ContactTrigger>
-        </div>
+        <ContactTrigger className="btn btn-primary -ml-32 flex-none max-[980px]:hidden">Contact</ContactTrigger>
       </div>
     </nav>
   );

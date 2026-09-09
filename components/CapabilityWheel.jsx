@@ -88,8 +88,10 @@ export default function CapabilityWheel() {
         const START_ANGLE = Math.PI / 2;
         const half = Math.PI / N;
 
-        const COLOR_TOP = new THREE.Color("#66b2ff");
-        const COLOR_BOTTOM = new THREE.Color("#0b4a8f");
+        // Brand primary / primary-dark tokens (see app/globals.css) — keeps the
+        // disc in the official palette instead of a bespoke blue pair.
+        const COLOR_TOP = new THREE.Color("#1877f2");
+        const COLOR_BOTTOM = new THREE.Color("#0f4c81");
 
         function pt(r, a) {
           return { x: r * Math.cos(a), y: r * Math.sin(a) };
