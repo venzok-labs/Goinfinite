@@ -43,9 +43,24 @@ export default function CardCarousel({
 }) {
   const carouselRef = useRef(null);
   const cardRefs = useRef([]);
-  const thumbRef = useRef(null);
+  const trackRef = useRef(null);
+  const fillRef = useRef(null);
+  const handleRef = useRef(null);
   const activeIndexRef = useRef(0);
   const scrollAnimRef = useRef(null);
+  // While a button-driven animation is in flight, the *target* card is
+  // already known for certain (scrollByCard just set it) — but the
+  // animation moving scrollLeft fires ordinary "scroll" events on nearly
+  // every frame same as a real drag would, and updateFocus normally
+  // treats those as "figure out which card the user scrolled to" and
+  // overwrites activeIndexRef with its own geometric guess. Read mid-flight
+  // — before the animation has actually reached its target — that guess is
+  // wrong, and it was clobbering the correct target right out from under
+  // it, which is what let a second click land on the wrong "current" card
+  // and appear to skip one. This flag tells updateFocus to keep animating
+  // the visual dimming (that's harmless either way) but leave
+  // activeIndexRef alone until the animation's own final correction.
+  const suppressFocusIndexRef = useRef(false);
   const count = items.length;
 
   useEffect(() => {
@@ -66,29 +81,48 @@ export default function CardCarousel({
       const step = cardStep();
       if (!step) return;
 
-      const frameRect = carousel.getBoundingClientRect();
-      const center = frameRect.left + frameRect.width / 2;
       const atStart = carousel.scrollLeft <= 1;
       const atEnd = carousel.scrollLeft >= carousel.scrollWidth - carousel.clientWidth - 1;
 
+      // Measured with offsetLeft (plain layout position, relative to the
+      // carousel itself — it's the offsetParent via the `relative` class
+      // above) against scrollLeft, NOT getBoundingClientRect against the
+      // frame's edge. The unfocused cards are visually shrunk with
+      // `transform: scale(...)` below, and getBoundingClientRect reflects
+      // that shrink — so measuring "nearest" that way was reading each
+      // card's own dimming effect back into the very calculation that
+      // decides the dimming, a feedback loop that could land on a card 1-2
+      // past the one scrollByCard had actually aimed for. offsetLeft is a
+      // pure layout value, untouched by transform, so it isn't distorted by
+      // its own output.
+      const insetLeft = parseFloat(getComputedStyle(carousel).paddingLeft) || 0;
+      const referenceOffset = carousel.scrollLeft + insetLeft;
+
       let nearestIdx = 0;
       let nearestDist = Infinity;
-      const distances = cards.map((card, i) => {
-        if (!card) return Infinity;
-        const r = card.getBoundingClientRect();
-        const dist = Math.abs(r.left + r.width / 2 - center);
+      cards.forEach((card, i) => {
+        if (!card) return;
+        const dist = Math.abs(card.offsetLeft - referenceOffset);
         if (dist < nearestDist) {
           nearestDist = dist;
           nearestIdx = i;
         }
-        return dist;
       });
       if (atStart) nearestIdx = 0;
       if (atEnd) nearestIdx = count - 1;
 
+      // Scale/opacity falloff is driven by distance *from the active card's
+      // index*, not raw pixel distance from the frame's center — this frame
+      // is wide enough to show several cards at once, so the card nearest
+      // the geometric center is rarely the one that's actually flush at the
+      // start (e.g. card 1 on load, at scrollLeft 0). Tying the "prominent"
+      // card here to whichever index atStart/atEnd/the nearest-search above
+      // decided is active keeps the highlight and the scale/opacity in
+      // agreement — previously they could disagree, which showed up as the
+      // wrong card looking selected on load.
       cards.forEach((card, i) => {
         if (!card) return;
-        const norm = Math.min(1, distances[i] / step);
+        const norm = Math.min(1, Math.abs(i - nearestIdx) * 0.6);
         if (!reduced) {
           card.style.transform = `translateY(0) scale(${(1 - norm * 0.14).toFixed(3)})`;
           card.style.opacity = (1 - norm * 0.55).toFixed(3);
@@ -96,20 +130,26 @@ export default function CardCarousel({
       });
 
       cards.forEach((card, i) => card?.classList.toggle("shadow-[0_26px_54px_-18px_rgba(11,42,74,0.5)]", i === nearestIdx));
-      activeIndexRef.current = nearestIdx;
-      updateThumb();
+      // See suppressFocusIndexRef's own comment — while a button's animation
+      // is still in flight, don't let this geometric guess (which can be
+      // reading a mid-animation scrollLeft) overwrite the target it already
+      // knows for certain.
+      if (!suppressFocusIndexRef.current) activeIndexRef.current = nearestIdx;
+      updateProgress();
     }
-    function updateThumb() {
-      const thumb = thumbRef.current;
-      if (!thumb) return;
+    // A real seek bar, like an audio player's scrubber: the fill/handle
+    // sit at a single position representing how far through the whole
+    // track you are (scrollLeft / maxScroll), not "how much of the track
+    // is currently visible" — that's what makes it draggable to any point.
+    function updateProgress() {
+      const fill = fillRef.current;
+      const handle = handleRef.current;
+      if (!fill || !handle) return;
       const maxScroll = carousel.scrollWidth - carousel.clientWidth;
       const progress = maxScroll > 0 ? carousel.scrollLeft / maxScroll : 0;
-      // Thumb width mirrors how much of the whole track one screenful
-      // covers, same idea as a native scrollbar — floored so it stays
-      // grabbable even when there are many cards.
-      const widthPct = Math.max(18, (carousel.clientWidth / carousel.scrollWidth) * 100);
-      thumb.style.width = `${widthPct}%`;
-      thumb.style.left = `${progress * (100 - widthPct)}%`;
+      const pct = `${(progress * 100).toFixed(2)}%`;
+      fill.style.width = pct;
+      handle.style.left = pct;
     }
     function requestFocusUpdate() {
       if (focusRaf) return;
@@ -117,7 +157,7 @@ export default function CardCarousel({
     }
     carousel.addEventListener("scroll", requestFocusUpdate, { passive: true });
     window.addEventListener("resize", requestFocusUpdate);
-    updateThumb();
+    updateProgress();
 
     const entranceIo = new IntersectionObserver(
       (entries) => {
@@ -129,6 +169,16 @@ export default function CardCarousel({
               () => {
                 card.style.opacity = "1";
                 card.style.transform = "translateY(0) scale(1)";
+                // Each staggered entrance write unconditionally set full
+                // opacity/scale, which — for every card but the last —
+                // landed AFTER updateFocus()'s own dimming below and
+                // silently erased it. That's why the "active" card's
+                // highlight never actually stuck once the entrance
+                // animation finished: everything settled back to full
+                // brightness regardless of which card should be prominent.
+                // Re-running it after each card's own write keeps the
+                // correct card dimmed once the stagger settles.
+                updateFocus();
               },
               reduced ? 0 : i * 90
             );
@@ -148,6 +198,9 @@ export default function CardCarousel({
     function onDown(e) {
       isDown = true;
       dragged = false;
+      // Restores the native settle-to-nearest-card snap for this drag, in
+      // case a track-scrub left it switched off (see onTrackUp above).
+      carousel.style.scrollSnapType = "";
       carousel.classList.add("cursor-grabbing");
       startX = e.pageX;
       startScroll = carousel.scrollLeft;
@@ -194,6 +247,68 @@ export default function CardCarousel({
     }
     carousel.addEventListener("wheel", onWheel, { passive: false });
 
+    // ---- the track itself is a real scrubber, like an audio player's seek
+    // bar: click anywhere on it to jump straight there, or grab the handle
+    // and drag to scrub — previously the track only ever displayed
+    // progress, it had no interaction at all. ----
+    const track = trackRef.current;
+    let seeking = false;
+    function seekTo(clientX) {
+      if (!track) return;
+      const rect = track.getBoundingClientRect();
+      const ratio = rect.width ? Math.min(1, Math.max(0, (clientX - rect.left) / rect.width)) : 0;
+      const maxScroll = carousel.scrollWidth - carousel.clientWidth;
+      carousel.scrollLeft = ratio * maxScroll;
+      // scrollLeft doesn't always fire a "scroll" event synchronously, and
+      // dragging needs the fill/handle to track the pointer every frame
+      // regardless — so update them directly here too.
+      updateProgress();
+    }
+    function onTrackDown(e) {
+      seeking = true;
+      // scroll-snap-type fights a direct scrollLeft assignment — setting it
+      // to some in-between value gets silently snapped back to the nearest
+      // card immediately, which is exactly why dragging the bar felt like it
+      // wasn't working. Switched off for the duration of the scrub, restored
+      // on release so normal card-swipe snapping still applies otherwise.
+      carousel.style.scrollSnapType = "none";
+      // No transition lag while actively scrubbing — the handle should
+      // track the pointer 1:1, same as dragging a real playback scrubber.
+      if (fillRef.current) fillRef.current.style.transitionDuration = "0ms";
+      if (handleRef.current) handleRef.current.style.transitionDuration = "0ms";
+      seekTo(e.clientX);
+      try {
+        track.setPointerCapture(e.pointerId);
+      } catch (err) {
+        /* no-op */
+      }
+      e.preventDefault();
+    }
+    function onTrackMove(e) {
+      if (!seeking) return;
+      seekTo(e.clientX);
+    }
+    function onTrackUp() {
+      if (!seeking) return;
+      seeking = false;
+      // Deliberately NOT re-enabling scroll-snap here — a real scrubber
+      // stays exactly where you drop it. Re-enabling it immediately made
+      // Chromium instantly re-apply snap correction and jump to the
+      // nearest card, undoing the whole point of dragging to a spot
+      // in-between. It's restored instead the next time someone actually
+      // drags a card by hand (see onDown below), which is where the
+      // familiar "settle after a swipe" feel actually belongs.
+      if (fillRef.current) fillRef.current.style.transitionDuration = "";
+      if (handleRef.current) handleRef.current.style.transitionDuration = "";
+      requestFocusUpdate();
+    }
+    if (track) {
+      track.addEventListener("pointerdown", onTrackDown);
+      track.addEventListener("pointermove", onTrackMove);
+      track.addEventListener("pointerup", onTrackUp);
+      track.addEventListener("pointercancel", onTrackUp);
+    }
+
     return () => {
       if (focusRaf) cancelAnimationFrame(focusRaf);
       if (scrollAnimRef.current) cancelAnimationFrame(scrollAnimRef.current);
@@ -204,6 +319,12 @@ export default function CardCarousel({
       window.removeEventListener("mousemove", onMove);
       carousel.removeEventListener("click", onClickCapture, true);
       carousel.removeEventListener("wheel", onWheel);
+      if (track) {
+        track.removeEventListener("pointerdown", onTrackDown);
+        track.removeEventListener("pointermove", onTrackMove);
+        track.removeEventListener("pointerup", onTrackUp);
+        track.removeEventListener("pointercancel", onTrackUp);
+      }
       entranceIo.disconnect();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -215,9 +336,16 @@ export default function CardCarousel({
     const current = activeIndexRef.current;
     const target = dir === 1 ? (current === count - 1 ? 0 : current + 1) : current === 0 ? count - 1 : current - 1;
     activeIndexRef.current = target;
+    // A rapid second click cancels this animation below and starts a fresh
+    // one — suppression should span that too, so it's only ever lifted once
+    // an animation actually reaches its target uninterrupted.
+    suppressFocusIndexRef.current = true;
 
     const targetCard = cards[target];
-    if (!carousel || !targetCard) return;
+    if (!carousel || !targetCard) {
+      suppressFocusIndexRef.current = false;
+      return;
+    }
     // Align the target card's own left edge flush with the frame's visible
     // start (minus the edge inset), not centered in the frame — this frame
     // is wide enough to show several cards at once, so "center the target
@@ -236,15 +364,29 @@ export default function CardCarousel({
     // smooth scrolling is unreliable together with `scroll-snap-type` on
     // this track in Chromium browsers: the snap logic can cancel the
     // native animation before it moves at all, which read as the buttons
-    // doing nothing. Driving scrollLeft directly every frame sidesteps that.
+    // doing nothing. Driving scrollLeft directly every frame sidesteps that
+    // — but scroll-snap-type has to be switched off for the *whole* animation
+    // too, not just the native scrollTo case: it was still on here, so it
+    // fought every single frame's manual scrollLeft assignment the same way
+    // it fought the track-scrubber (see onTrackDown/onTrackUp above), which
+    // is what made the buttons feel jerky and stall partway.
     if (scrollAnimRef.current) cancelAnimationFrame(scrollAnimRef.current);
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     const maxLeft = carousel.scrollWidth - carousel.clientWidth;
     const endLeft = Math.max(0, Math.min(left, maxLeft));
     if (reduced) {
       carousel.scrollLeft = endLeft;
+      suppressFocusIndexRef.current = false;
       return;
     }
+    // Deliberately left switched off once the animation lands, same as the
+    // track-scrubber — each card here is `snap-center`, so re-enabling snap
+    // right after landing on our flush-start target let the browser
+    // immediately "correct" it toward the nearest card-center instead,
+    // undoing the very position we just animated to. It's restored the
+    // next time someone drags a card by hand (see onDown), which is where
+    // the native settle-after-swipe behavior actually belongs.
+    carousel.style.scrollSnapType = "none";
     const startLeft = carousel.scrollLeft;
     const delta = endLeft - startLeft;
     const duration = 420;
@@ -252,7 +394,24 @@ export default function CardCarousel({
     function step(now) {
       const t = Math.min(1, (now - startTime) / duration);
       carousel.scrollLeft = startLeft + delta * easeOutCubic(t);
-      scrollAnimRef.current = t < 1 ? requestAnimationFrame(step) : null;
+      if (t < 1) {
+        scrollAnimRef.current = requestAnimationFrame(step);
+      } else {
+        scrollAnimRef.current = null;
+        // The "scroll" listener that drives updateFocus/updateProgress is
+        // itself rAF-throttled (only one pending update at a time), so
+        // while this animation was firing a "scroll" event on nearly every
+        // frame, most of those got coalesced into whichever single
+        // updateFocus call happened to be scheduled at that moment — which
+        // could land on an in-between scrollLeft rather than this final
+        // one. That's what made the highlighted card lag a click behind or
+        // occasionally skip one. Dispatching one more "scroll" now the
+        // animation has actually finished guarantees a fresh read of the
+        // true resting position — lifting the suppression first so this
+        // particular updateFocus call is allowed to (re)sync activeIndexRef.
+        suppressFocusIndexRef.current = false;
+        carousel.dispatchEvent(new Event("scroll"));
+      }
     }
     scrollAnimRef.current = requestAnimationFrame(step);
   }
@@ -272,7 +431,7 @@ export default function CardCarousel({
       <div className="mx-auto max-w-[1180px]">
         <div
           ref={carouselRef}
-          className={`flex cursor-grab snap-x snap-proximity gap-[22px] overflow-x-auto pb-5 pt-1.5 [-ms-overflow-style:none] [scrollbar-width:none] select-none [&::-webkit-scrollbar]:hidden ${paddingClassName}`}
+          className={`relative flex cursor-grab snap-x snap-proximity gap-[22px] overflow-x-auto pb-5 pt-1.5 [-ms-overflow-style:none] [scrollbar-width:none] select-none [&::-webkit-scrollbar]:hidden ${paddingClassName}`}
         >
           {items.map((item, i) => (
             <article
@@ -301,8 +460,22 @@ export default function CardCarousel({
             </svg>
           </button>
 
-          <div className="relative h-1 flex-1 overflow-hidden rounded-full bg-line">
-            <div ref={thumbRef} className="absolute inset-y-0 rounded-full bg-blue transition-[left,width] duration-200 [transition-timing-function:cubic-bezier(0.22,1,0.36,1)]" />
+          {/* A real seek bar: click anywhere to jump there, or drag the
+              handle to scrub, like an audio player's playback bar. The
+              track itself has a taller invisible hit area (py-2, negative
+              margin to cancel it visually) than the thin visible line, so
+              it's easy to grab without needing pixel-perfect precision. */}
+          <div ref={trackRef} className="group/track relative -my-2 flex-1 cursor-pointer touch-none py-2 select-none">
+            <div className="relative h-1 overflow-hidden rounded-full bg-line">
+              <div
+                ref={fillRef}
+                className="absolute inset-y-0 left-0 rounded-full bg-blue transition-[width] duration-200 [transition-timing-function:cubic-bezier(0.22,1,0.36,1)]"
+              />
+            </div>
+            <div
+              ref={handleRef}
+              className="absolute top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2 rounded-full bg-blue shadow-[0_2px_6px_-1px_rgba(24,119,242,0.6)] ring-2 ring-white transition-[left] duration-200 [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] group-hover/track:scale-[1.15]"
+            />
           </div>
 
           <button

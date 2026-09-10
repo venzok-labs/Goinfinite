@@ -189,7 +189,14 @@ export default function Industries() {
       </div>
 
       {/* ---------- Desktop: fixed-height panel, wheel-driven story ---------- */}
-      <div className="relative hidden h-screen min-[901px]:flex flex-col items-center justify-center overflow-hidden bg-white">
+      {/* `h-screen` used to be full viewport height regardless of content —
+          the wheel-capture only cares about events over `stageRef` (see the
+          big comment above), it doesn't need or use the extra height, so on
+          any screen taller than the ~550px of actual content that was just
+          dead empty space above and below. `min-h` sized to the content
+          instead, with modest py padding, removes that without touching the
+          interaction at all. */}
+      <div className="relative hidden min-h-[620px] min-[901px]:flex flex-col items-center justify-center overflow-hidden bg-white py-16">
         {/* Faint background texture — the panel is much taller than the
             content it holds, so this keeps the surrounding space from
             reading as empty rather than deliberate. */}

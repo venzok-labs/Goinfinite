@@ -14,7 +14,7 @@ const SERVICES = [
     no: "01",
     title: "Concept & Product Design",
     tagline: "From Engineering Idea to Practical Product",
-    image: "/images/what-we-do/concept-design.webp",
+    image: "/images/services/concept-design.webp",
     copy: "We help transform engineering concepts, sketches, existing components, and customer requirements into practical product designs — combining design creativity with engineering discipline.",
     capabilities: [
       "Concept development",
@@ -31,7 +31,7 @@ const SERVICES = [
     no: "02",
     title: "CAE Product Validation",
     tagline: "Validate Before You Manufacture",
-    image: "/images/what-we-do/cae-validation.webp",
+    image: "/images/services/cae-validation.webp",
     copy: "Simulation‑led engineering decisions — evaluating design performance, understanding failure risks, and informing manufacturing choices before a single part is cut.",
     capabilities: [
       "Finite Element Analysis (FEA)",
@@ -47,7 +47,7 @@ const SERVICES = [
     no: "03",
     title: "Engineering Measurement & Reverse Engineering",
     tagline: "From Physical Components to Engineering Data",
-    image: "/images/what-we-do/measurement.webp",
+    image: "/images/services/measurement.webp",
     copy: "When the drawing is missing, the part is complex, or the existing design needs to be understood — we help create the engineering data, from portable 3D measurement to full reverse‑engineered CAD.",
     capabilities: [
       "3D measurement & portable CMM",
@@ -63,6 +63,7 @@ const SERVICES = [
     no: "04",
     title: "Manufacturing Engineering",
     tagline: "Designed for Manufacturing. Built for Reality.",
+    image: "/images/services/manufacturing.webp",
     copy: "Practical engineering inputs, design reviews and production‑oriented problem solving that move a design from correct-on-paper to reliably manufacturable.",
     capabilities: [
       "Manufacturing‑oriented design support",
@@ -77,6 +78,7 @@ const SERVICES = [
     no: "05",
     title: "Product Testing",
     tagline: "Engineering Confidence Through Testing",
+    image: "/images/services/testing.webp",
     copy: "Engineering verification and testing activities that confirm whether a design performs as intended under defined operating conditions.",
     capabilities: [
       "Engineering test planning",
@@ -91,6 +93,7 @@ const SERVICES = [
     no: "06",
     title: "Special‑Purpose Machine Design & Development",
     tagline: "Custom Machines for Specific Engineering Problems",
+    image: "/images/services/spm-development.webp",
     copy: "A multidisciplinary approach — mechanical design, electrical systems, electronics and PLC programming — for production, assembly, inspection and testing needs an off‑the‑shelf machine can't solve.",
     capabilities: [
       "Special‑purpose machine concept development",

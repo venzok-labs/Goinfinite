@@ -31,8 +31,18 @@ const STEPS = [
     copy: "Design reviews, tooling, production support.",
     image: "/images/what-we-do/manufacturing.webp",
   },
-  { no: "05", title: "Testing", copy: "Verification of performance and reliability." },
-  { no: "06", title: "SPM Development", copy: "Custom mechanical, electrical & PLC machines." },
+  {
+    no: "05",
+    title: "Testing",
+    copy: "Verification of performance and reliability.",
+    image: "/images/what-we-do/testing.webp",
+  },
+  {
+    no: "06",
+    title: "SPM Development",
+    copy: "Custom mechanical, electrical & PLC machines.",
+    image: "/images/what-we-do/spm-development.webp",
+  },
 ];
 
 export default function WhatWeDo() {

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import Logo from "./Logo";
 import GearboxHero from "./GearboxHero";
 import StatsStrip from "./StatsStrip";
@@ -40,9 +41,9 @@ export default function Hero() {
           </p>
           <div className="mt-[30px] flex flex-wrap gap-3">
             <ContactTrigger className="btn btn-white">Discuss Your Project →</ContactTrigger>
-            <a className="btn btn-ghost-white" href="#services">
+            <Link className="btn btn-ghost-white" href="/services">
               Explore Services
-            </a>
+            </Link>
           </div>
         </div>
 
