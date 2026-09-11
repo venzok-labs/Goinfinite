@@ -294,7 +294,7 @@ export default function ContactSection() {
     (scheduled && time ? ` and booked a call for ${date} at ${time}.` : ".");
 
   return (
-    <section id="contact" className="bg-white">
+    <section id="contact" className="scroll-mt-[92px] bg-white">
       <div className="wrap">
         {/* ---------- LEFT: the multi-step enquiry wizard ---------- */}
         <Reveal className="mx-auto max-w-[720px]">
@@ -680,7 +680,12 @@ export default function ContactSection() {
                 </div>
 
                 {/* ---- nav row ---- */}
-                <div className="flex items-center justify-between gap-3 border-t border-line bg-tint px-7 py-4 max-[560px]:px-5">
+                {/* flex-wrap, plus each button going full-width below 380px:
+                    the longest label here ("Schedule & submit →") doesn't
+                    fit next to "Back" in the available width on a narrow
+                    phone and was getting clipped at the viewport edge — below
+                    380px the buttons stack full-width instead of overflowing. */}
+                <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line bg-tint px-7 py-4 max-[560px]:px-5">
                   {step === 1 && (
                     <>
                       <span />
@@ -688,7 +693,7 @@ export default function ContactSection() {
                         type="button"
                         onClick={goToContact}
                         disabled={form.industries.length === 0}
-                        className="btn btn-primary disabled:cursor-not-allowed disabled:opacity-50"
+                        className="btn btn-primary max-[380px]:w-full max-[380px]:justify-center disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         Continue →
                       </button>
@@ -696,10 +701,18 @@ export default function ContactSection() {
                   )}
                   {step === 2 && (
                     <>
-                      <button type="button" onClick={() => setStep(1)} className="btn btn-outline">
+                      <button
+                        type="button"
+                        onClick={() => setStep(1)}
+                        className="btn btn-outline max-[380px]:w-full max-[380px]:justify-center"
+                      >
                         Back
                       </button>
-                      <button type="button" onClick={goToSchedule} className="btn btn-primary">
+                      <button
+                        type="button"
+                        onClick={goToSchedule}
+                        className="btn btn-primary max-[380px]:w-full max-[380px]:justify-center"
+                      >
                         Continue →
                       </button>
                     </>
@@ -710,7 +723,7 @@ export default function ContactSection() {
                         type="button"
                         onClick={() => setStep(2)}
                         disabled={status === "submitting"}
-                        className="btn btn-outline disabled:cursor-not-allowed disabled:opacity-60"
+                        className="btn btn-outline max-[380px]:w-full max-[380px]:justify-center disabled:cursor-not-allowed disabled:opacity-60"
                       >
                         Back
                       </button>
@@ -718,7 +731,7 @@ export default function ContactSection() {
                         type="button"
                         onClick={() => submitForm(!!time)}
                         disabled={status === "submitting"}
-                        className="btn btn-primary disabled:cursor-not-allowed disabled:opacity-60"
+                        className="btn btn-primary max-[380px]:w-full max-[380px]:justify-center disabled:cursor-not-allowed disabled:opacity-60"
                       >
                         {status === "submitting" ? "Submitting…" : "Schedule & submit →"}
                       </button>

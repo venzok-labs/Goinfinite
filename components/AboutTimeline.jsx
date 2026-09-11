@@ -212,7 +212,7 @@ export default function AboutTimeline() {
   const fillPct = activeIndex !== null ? pct(STOPS[activeIndex].year) : 0;
 
   return (
-    <section id="about" ref={sectionRef}>
+    <section id="about" ref={sectionRef} className="scroll-mt-[92px]">
       <div className="wrap">
         <Reveal className="sec-head mx-auto text-center">
           <div className="eyebrow">About Infinite Solutions</div>
@@ -294,11 +294,25 @@ export default function AboutTimeline() {
               );
             })}
 
-            {/* tooltip */}
+            {/* tooltip — anchor point is clamped in from both edges of the
+                track (not just 0%/100%) so a long title centered near either
+                end (e.g. the 1980 or 2026 stop) can't get cut off by the
+                page edge; on narrow screens it also wraps instead of running
+                on as one long unbroken line, which keeps its box narrow
+                enough that even a long mid-track title (e.g. "Pennar
+                Industries — General Manager") stays clear of the edges.
+                Anchored by `bottom` (a fixed distance up from the track),
+                not `top` — a `top` offset fixes the box's *top* edge, so a
+                title that wraps to 3-4 lines only grows the box *downward*
+                from there, extending its bottom edge (and the whole block
+                of text) further down into — and over — the timeline's own
+                dots. Anchoring the bottom edge instead means a taller,
+                more-wrapped tooltip grows upward, away from the track,
+                regardless of how many lines its title needs. */}
             <div
-              className="pointer-events-none absolute -top-[44px] z-[5] whitespace-nowrap rounded-md px-3 py-1.5 font-mono text-[11px] text-white transition-[left,opacity,transform,background] duration-300"
+              className="pointer-events-none absolute bottom-[14px] z-[5] whitespace-nowrap rounded-md px-3 py-1.5 text-center font-mono text-[11px] text-white transition-[left,opacity,transform,background] duration-300 max-[760px]:max-w-[132px] max-[760px]:whitespace-normal max-[760px]:leading-snug"
               style={{
-                left: `${fillPct}%`,
+                left: `clamp(72px, ${fillPct}%, calc(100% - 72px))`,
                 transform: `translateX(-50%) translateY(${activeIndex !== null ? 0 : 6}px)`,
                 opacity: activeIndex !== null ? 1 : 0,
                 background: active.success ? "#0f8a7a" : active.milestone ? "var(--blue)" : "var(--navy)",

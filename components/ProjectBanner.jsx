@@ -12,7 +12,7 @@ const TRACK = [...PROJECTS, ...PROJECTS];
 // see components/Projects.jsx, kept unused for a future /projects hub.
 export default function ProjectBanner() {
   return (
-    <section id="projects" className="bg-white py-[88px] pb-24 max-[620px]:py-16 max-[620px]:pb-[72px]">
+    <section id="projects" className="scroll-mt-[92px] bg-white py-[88px] pb-24 max-[620px]:py-16 max-[620px]:pb-[72px]">
       <div className="wrap">
         <Reveal className="mx-auto mb-11 max-w-[640px] text-center">
           <div className="eyebrow">Selected projects</div>

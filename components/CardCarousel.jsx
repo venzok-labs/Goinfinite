@@ -40,6 +40,12 @@ export default function CardCarousel({
   hint,
   cardClassName = "h-[300px] w-[340px] max-[560px]:w-[86vw]",
   paddingClassName = "pl-8 pr-8 max-[720px]:pl-5 max-[720px]:pr-5",
+  // Optional "⟲ Back to start" control next to the hint text — the Next
+  // button already wraps last→first, but that's only discoverable by
+  // clicking through every card; callers with a lot of cards (Industries'
+  // mobile view) pass a label here to give a direct one-tap way back to the
+  // first card instead of relying on that wrap-around.
+  restartLabel,
 }) {
   const carouselRef = useRef(null);
   const cardRefs = useRef([]);
@@ -335,10 +341,17 @@ export default function CardCarousel({
   }, [count]);
 
   function scrollByCard(dir) {
-    const carousel = carouselRef.current;
-    const cards = cardRefs.current;
     const current = activeIndexRef.current;
     const target = dir === 1 ? (current === count - 1 ? 0 : current + 1) : current === 0 ? count - 1 : current - 1;
+    goToIndex(target);
+  }
+
+  // Shared by scrollByCard (±1, wrapping) and the optional restart button
+  // (always index 0) — everything below only cares about the destination
+  // index, not how it was chosen.
+  function goToIndex(target) {
+    const carousel = carouselRef.current;
+    const cards = cardRefs.current;
     activeIndexRef.current = target;
     // A rapid second click cancels this animation below and starts a fresh
     // one — suppression should span that too, so it's only ever lifted once
@@ -496,14 +509,34 @@ export default function CardCarousel({
       </div>
 
       <div className="wrap">
-        {hint && (
-          <div className="mt-3.5 flex justify-center">
-            <span className="inline-flex items-center gap-[7px] font-mono text-[10.5px] font-semibold uppercase tracking-[0.08em] text-blue">
-              <svg width="14" height="10" viewBox="0 0 14 10" fill="none" className="flex-none">
-                <path d="M1 5h12M8 1l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              {hint}
-            </span>
+        {(hint || restartLabel) && (
+          <div className="mt-3.5 flex flex-wrap items-center justify-center gap-x-5 gap-y-2">
+            {hint && (
+              <span className="inline-flex items-center gap-[7px] font-mono text-[10.5px] font-semibold uppercase tracking-[0.08em] text-blue">
+                <svg width="14" height="10" viewBox="0 0 14 10" fill="none" className="flex-none">
+                  <path d="M1 5h12M8 1l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                {hint}
+              </span>
+            )}
+            {restartLabel && (
+              <button
+                type="button"
+                onClick={() => goToIndex(0)}
+                className="inline-flex cursor-pointer items-center gap-[7px] font-mono text-[10.5px] font-semibold uppercase tracking-[0.08em] text-steel transition-colors hover:text-blue"
+              >
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" className="flex-none">
+                  <path
+                    d="M9.5 3.2A4.2 4.2 0 1 0 10.2 6"
+                    stroke="currentColor"
+                    strokeWidth="1.4"
+                    strokeLinecap="round"
+                  />
+                  <path d="M9.5 1v2.5H7" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+                {restartLabel}
+              </button>
+            )}
           </div>
         )}
       </div>
