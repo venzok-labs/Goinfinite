@@ -63,6 +63,7 @@ const REVERT_MS = 60000;
 export default function CapabilityWheel() {
   const stageRef = useRef(null);
   const [failed, setFailed] = useState(false);
+  const [ready, setReady] = useState(false);
 
   const tagRef = useRef(null);
   const indexRef = useRef(null);
@@ -509,6 +510,36 @@ export default function CapabilityWheel() {
           window.removeEventListener("pointercancel", endDrag);
         });
 
+        // ---- keyboard access ----
+        // The wedges themselves are WebGL/raycast targets, not real DOM
+        // elements, so nothing about them was ever reachable without a mouse
+        // or touch. `stage` carries tabIndex+role="listbox" in the JSX below
+        // to make it a real stop in the tab order; Left/Right steps between
+        // segments the same way the pointer tap does, Home/End jump to the
+        // first/last, and Enter/Space re-confirms the current one (handy
+        // after the panel's own 60s auto-revert).
+        let kbIndex = 0;
+        function onKeyDown(ev) {
+          if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "Home", "End", "Enter", " "].includes(ev.key)) {
+            return;
+          }
+          ev.preventDefault();
+          if (ev.key === "ArrowLeft" || ev.key === "ArrowUp") {
+            kbIndex = (kbIndex - 1 + N) % N;
+          } else if (ev.key === "ArrowRight" || ev.key === "ArrowDown") {
+            kbIndex = (kbIndex + 1) % N;
+          } else if (ev.key === "Home") {
+            kbIndex = 0;
+          } else if (ev.key === "End") {
+            kbIndex = N - 1;
+          }
+          // Enter/Space re-select the same index; the arrow-key branches
+          // above already updated kbIndex before falling through to this.
+          selectCategory(CATS[kbIndex], kbIndex, wedgeMeshes[kbIndex]);
+        }
+        stage.addEventListener("keydown", onKeyDown);
+        cleanupFns.push(() => stage.removeEventListener("keydown", onKeyDown));
+
         cleanupFns.push(() => {
           disposables.forEach((d) => d.dispose && d.dispose());
           // Without this, React 18 dev-mode's double-invoked effect (mount
@@ -522,6 +553,7 @@ export default function CapabilityWheel() {
         });
 
         renderDefault();
+        if (!cancelled) setReady(true);
       } catch (err) {
         console.error("CapabilityWheel setup failed:", err);
         setFailed(true);
@@ -566,8 +598,24 @@ export default function CapabilityWheel() {
         {/* cursor/hover state here is toggled imperatively via classList from
             the Three.js pointer handlers above (outside React render), so
             `.cw-stage`/`.grabbing`/`.hoverable` stay plain CSS (globals.css)
-            rather than conditional Tailwind classes. */}
-        <div className="cw-stage relative aspect-square w-[min(420px,90vw)] cursor-grab touch-none" ref={stageRef} />
+            rather than conditional Tailwind classes. tabIndex+role make it a
+            real stop in the tab order — the wedges themselves are WebGL
+            raycast targets, not DOM elements, so without this the wheel had
+            no keyboard path at all (see the keydown handler above). */}
+        <div
+          className="cw-stage relative aspect-square w-[min(420px,90vw)] cursor-grab touch-none rounded-full focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue"
+          ref={stageRef}
+          tabIndex={0}
+          role="listbox"
+          aria-label="Engineering capability categories — use the arrow keys to browse, Enter to select"
+        >
+          {!ready && !failed && (
+            <div
+              aria-hidden="true"
+              className="absolute inset-[8%] animate-pulse rounded-full bg-tint-2 motion-reduce:animate-none"
+            />
+          )}
+        </div>
       </div>
 
       <div className="relative w-full max-w-[560px] overflow-hidden rounded-[20px] border border-line bg-white p-[30px_32px_26px] shadow-[0_20px_44px_-28px_rgba(11,42,74,0.28)]">
@@ -575,8 +623,15 @@ export default function CapabilityWheel() {
           <span ref={tagRef} className="font-mono text-[11px] font-semibold uppercase tracking-[0.08em] text-blue" />
           <span ref={indexRef} className="text-[11px] text-steel [font-variant-numeric:tabular-nums]" />
         </div>
-        <h3 ref={titleRef} className="mb-3 min-h-[29px] text-[22px] text-navy" />
-        <p ref={bodyRef} className="min-h-[96px] text-[15px] leading-relaxed text-steel" />
+        {/* aria-live so a screen-reader user hears the category change even
+            though nothing here is a focus target itself — the typewriter
+            effect mutates this DOM many times a second while typing, but
+            screen readers coalesce rapid live-region changes and announce
+            the settled text, so this doesn't turn into a firehose. */}
+        <div aria-live="polite">
+          <h3 ref={titleRef} className="mb-3 min-h-[29px] text-[22px] text-navy" />
+          <p ref={bodyRef} className="min-h-[96px] text-[15px] leading-relaxed text-steel" />
+        </div>
         <div ref={hintRef} className="mt-4 flex items-center gap-2 text-[12.5px] font-semibold text-blue">
           <span>→</span> Select a segment on the wheel to see its tools &amp; experience
         </div>

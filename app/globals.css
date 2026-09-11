@@ -93,6 +93,34 @@
   }
 }
 
+/* AboutTimeline's "Why Customers Choose Infinite Solutions" rows: icon
+   strokes draw in (same technique as checkDraw above), the row's background
+   flashes a light tint and fades back to white, and the text slides in
+   just behind the icon. All three run together, staggered per row via
+   inline animation-delay in the component. */
+@keyframes whyIconDraw {
+  from {
+    stroke-dashoffset: 130;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes whySweep {
+  0% {
+    background: var(--tint-2);
+  }
+  100% {
+    background: transparent;
+  }
+}
+@keyframes whyTextIn {
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
 /* Success circle "arriving" with a slight overshoot, then a scatter of
    sparkles bursting outward from its center and fading — the tx/ty/rot
    burst vector is supplied per-sparkle via inline custom properties. */

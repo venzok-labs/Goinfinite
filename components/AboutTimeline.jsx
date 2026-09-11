@@ -69,6 +69,38 @@ const STOPS = [
   },
 ];
 
+// "Why Customers Choose Infinite Solutions" — from the client brief. Sits
+// right after the timeline (the "story"), as the case for the company that
+// story builds toward. Numbered-list style, matching the 01/02/03
+// convention already used in WhatWeDo/Industries/Services.
+const WHY_POINTS = [
+  {
+    title: "Practical Engineering Experience",
+    desc: "Engineering knowledge built through real industrial and manufacturing environments.",
+    icon: "M14.7 6.3a4 4 0 0 1-5.4 5.4L4 17l3 3 5.3-5.3a4 4 0 0 1 5.4-5.4l-2.6 2.6-2-2 2.6-2.6Z",
+  },
+  {
+    title: "Multidisciplinary Capability",
+    desc: "Design, CAE, measurement, manufacturing, testing, and automation under one engineering partner.",
+    icon: "M3.5 3.5h7v7h-7v-7Zm10 0h7v7h-7v-7Zm-10 10h7v7h-7v-7Zm10 0h7v7h-7v-7Z",
+  },
+  {
+    title: "Industry Understanding",
+    desc: "Experience across automotive, aerospace, heavy engineering, shipbuilding, and defence.",
+    icon: "M12 20.5a8.5 8.5 0 1 0 0-17 8.5 8.5 0 0 0 0 17ZM3.5 12h17M12 3.5c2.2 2.3 3.4 5.3 3.4 8.5s-1.2 6.2-3.4 8.5c-2.2-2.3-3.4-5.3-3.4-8.5S9.8 5.8 12 3.5Z",
+  },
+  {
+    title: "Engineering-Focused Approach",
+    desc: "Solutions developed around the actual engineering problem — not just the software or tool.",
+    icon: "M12 20.5a8.5 8.5 0 1 0 0-17 8.5 8.5 0 0 0 0 17ZM12 16.5a4.5 4.5 0 1 0 0-9 4.5 4.5 0 0 0 0 9Z",
+  },
+  {
+    title: "From Data to Decisions",
+    desc: "We help customers move from physical components, concepts, and engineering problems to usable engineering solutions.",
+    icon: "M4 18V9l4.5 3V9l4.5 3V9l4.5 3v6H4ZM3.5 21h17",
+  },
+];
+
 const COUNT = STOPS.length;
 const MIN_YEAR = STOPS[0].year;
 const SPAN = STOPS[COUNT - 1].year - MIN_YEAR;
@@ -89,6 +121,34 @@ export default function AboutTimeline() {
   const [activeIndex, setActiveIndex] = useState(null);
   const [playing, setPlaying] = useState(false);
   const [status, setStatus] = useState("Starting automatically…");
+
+  // "Why Customers Choose Infinite Solutions" plays its own icon-draw/
+  // highlight-sweep entrance once, independently of the timeline above it —
+  // it sits far enough below that the timeline's own observer (tied to the
+  // whole section) would otherwise fire long before this block is actually
+  // in view.
+  const whyRef = useRef(null);
+  const [whyPlay, setWhyPlay] = useState(false);
+  const [whyReduced, setWhyReduced] = useState(false);
+
+  useEffect(() => {
+    const el = whyRef.current;
+    if (!el) return;
+    setWhyReduced(window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            setWhyPlay(true);
+            io.disconnect();
+          }
+        });
+      },
+      { threshold: 0.25 }
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
 
   useEffect(() => {
     const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -299,6 +359,74 @@ export default function AboutTimeline() {
               Founded
             </div>
           )}
+        </div>
+
+        {/* ---------- Why Customers Choose Infinite Solutions ---------- */}
+        {/* Icon draws in (stroke-dashoffset, same technique as the Contact
+            success checkmark), the row background sweeps from a light tint
+            back to transparent, and the text slides in right behind —
+            staggered per row via inline animation-delay. Plays once, the
+            moment this block scrolls into view (see the whyRef observer
+            above) — not tied to the timeline's own play/replay above it. */}
+        <div ref={whyRef} className="mx-auto mt-20 max-w-[760px]">
+          <Reveal className="text-center">
+            <div className="eyebrow">Why Infinite Solutions</div>
+            <h3 className="mt-2.5 text-[26px] text-navy">Why Customers Choose Infinite Solutions</h3>
+          </Reveal>
+          <div className="mt-6 flex flex-col">
+            {WHY_POINTS.map((p, i) => {
+              // Reduced-motion: same technique as the timeline's own play()
+              // above (clamp to near-instant rather than skip entirely), so
+              // everything still settles into its final state via the same
+              // code path instead of a separate no-animation branch.
+              const stagger = whyReduced ? 0 : 180;
+              const base = i * stagger;
+              return (
+                <div
+                  key={p.title}
+                  className={`-mx-4 grid grid-cols-[52px_1fr] items-start gap-4 rounded-xl px-4 py-5 sm:-mx-5 sm:px-5 ${
+                    whyPlay ? "animate-[whySweep_1.1s_ease-out_forwards]" : ""
+                  }`}
+                  style={whyPlay ? { animationDelay: `${base}ms`, animationDuration: whyReduced ? "10ms" : undefined } : undefined}
+                >
+                  <span className="flex h-11 w-11 flex-none items-center justify-center rounded-[10px] bg-tint-2 text-blue">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                      <path
+                        d={p.icon}
+                        stroke="currentColor"
+                        strokeWidth="1.6"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeDasharray="130"
+                        strokeDashoffset="130"
+                        className={whyPlay ? "animate-[whyIconDraw_0.6s_ease_forwards]" : ""}
+                        style={
+                          whyPlay
+                            ? { animationDelay: `${base + (whyReduced ? 0 : 120)}ms`, animationDuration: whyReduced ? "10ms" : undefined }
+                            : undefined
+                        }
+                      />
+                    </svg>
+                  </span>
+                  <div
+                    className={`min-w-0 ${whyPlay ? "opacity-0" : ""}`}
+                    style={
+                      whyPlay
+                        ? {
+                            animation: `whyTextIn ${whyReduced ? "10ms" : "0.45s"} ease forwards`,
+                            animationDelay: `${base + (whyReduced ? 0 : 220)}ms`,
+                            transform: "translateX(-8px)",
+                          }
+                        : undefined
+                    }
+                  >
+                    <h4 className="text-[16px] font-semibold text-navy">{p.title}</h4>
+                    <p className="mt-1.5 max-w-[60ch] text-[14px] leading-[1.6] text-steel">{p.desc}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
     </section>

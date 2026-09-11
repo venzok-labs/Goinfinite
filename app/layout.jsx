@@ -1,5 +1,6 @@
 import "./globals.css";
 import ScrollCompanion from "../components/ScrollCompanion";
+import ScrollRestoration from "../components/ScrollRestoration";
 import { ContactProvider } from "../components/ContactContext";
 import ContactModal from "../components/ContactModal";
 
@@ -19,6 +20,7 @@ export default function RootLayout({ children }) {
         />
       </head>
       <body>
+        <ScrollRestoration />
         <ContactProvider>
           {children}
           <ContactModal />

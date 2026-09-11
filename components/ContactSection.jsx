@@ -112,6 +112,17 @@ const WHATSAPP_HREF = `https://wa.me/${WHATSAPP_NUMBER}`;
 // next to the form — hidden for now so the enquiry wizard runs full width.
 const SHOW_REACH_US = false;
 
+// ⚠️ DEMO MODE — TEMPORARY, REMOVE BEFORE GOING LIVE ⚠️
+// The Sheets webhook (SHEETS_WEBHOOK_URL, see app/api/contact/route.js and
+// GOOGLE_SHEETS_SETUP.md) isn't configured yet, so a real submit currently
+// fails with "Form isn't connected to a spreadsheet yet." Until that's set
+// up, this short-circuits submitForm() to skip the real /api/contact call
+// and always show the success screen, so the wizard can be demoed
+// end-to-end. Flip this back to false (or just delete this block and the
+// `if (DEMO_MODE) {...}` branch below) once the webhook is live — nothing
+// else about the real submit path has been touched.
+const DEMO_MODE = true;
+
 const INITIAL_FORM = {
   name: "",
   company: "",
@@ -235,6 +246,14 @@ export default function ContactSection() {
 
     setStatus("submitting");
     setSubmitError("");
+
+    // DEMO MODE — see the const above. Skips the real API call entirely so
+    // the success screen can be demoed without a working Sheets webhook.
+    if (DEMO_MODE) {
+      await new Promise((r) => setTimeout(r, 500)); // brief pause so "Submitting…" is visible
+      setStatus("sent");
+      return;
+    }
 
     try {
       const res = await fetch("/api/contact", {

@@ -223,7 +223,11 @@ export default function CardCarousel({
     function onMove(e) {
       if (!isDown) return;
       const delta = e.pageX - startX;
-      if (Math.abs(delta) > 4) dragged = true;
+      // Trackpad clicks (Mac especially) nudge the cursor a few pixels as
+      // part of the physical click itself, well past a couple of pixels —
+      // a low threshold here was misreading plain clicks on the carousel's
+      // cards as drags and swallowing their navigation.
+      if (Math.abs(delta) > 10) dragged = true;
       carousel.scrollLeft = startScroll - delta;
     }
     function onClickCapture(e) {
