@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Reveal from "./Reveal";
+import SwipeDeck from "./SwipeDeck";
 
 // Same seven sectors as before. Gradients now cycle through a small 3-tone
 // palette (same idea as the What We Do / Projects carousels) instead of a
@@ -173,7 +174,7 @@ export default function Industries() {
   }, []);
 
   return (
-    <section id="industries">
+    <section id="industries" className="scroll-mt-[92px]">
       {/* Mobile-only intro — on desktop this same copy lives inside the
           pinned panel's static left column instead (see below), since that
           column never moves while the cards behind it change. */}
@@ -359,34 +360,113 @@ export default function Industries() {
           </div>
         </div>
 
-      {/* ---------- Mobile/tablet fallback: plain vertical list ---------- */}
-      <div className="wrap hidden max-[900px]:block">
-        <div className="flex flex-col gap-10">
-          {INDUSTRIES.map((ind, i) => (
-            <Reveal key={ind.key} as="article" className="flex flex-col gap-4">
+      {/* ---------- Mobile/tablet fallback: a stacked, swipeable deck ----------
+          Same data as every other view (icon, sector number, name, copy) —
+          just a different way to browse it. Only the top card is draggable:
+          it follows the finger 1:1 with a slight tilt, the next couple of
+          cards fan out behind it, and dragging far/fast enough past the
+          threshold sends it flying off while the next card takes its place.
+          Falling short of that threshold springs it back to center instead.
+          A dealt-with card is removed for good (no `loop`) — once all seven
+          sectors have been swiped through, a "you've seen them all" card
+          takes their place with a one-tap way to go through them again. */}
+      <div className="hidden max-[900px]:flex flex-col items-center">
+        <SwipeDeck
+          items={INDUSTRIES}
+          getKey={(ind) => ind.key}
+          visibleCount={3}
+          className="h-[480px] w-[85vw] max-w-[380px]"
+          endContent={(restart) => (
+            <div className="flex h-full w-full flex-col items-center justify-center gap-4 rounded-2xl border border-line bg-tint p-8 text-center shadow-[0_20px_44px_-24px_rgba(11,42,74,0.35)]">
+              <span className="eyebrow">All sectors viewed</span>
+              <h3 className="text-xl text-navy">You've explored every industry we serve.</h3>
+              <p className="text-[14px] leading-[1.6] text-steel">
+                Automotive, aerospace, heavy engineering, shipbuilding, defence, industrial
+                equipment, and energy &amp; process — that's all seven.
+              </p>
+              <button type="button" onClick={restart} className="btn btn-primary mt-1">
+                ↺ Browse again
+              </button>
+            </div>
+          )}
+          renderCard={(ind) => {
+            const i = INDUSTRIES.indexOf(ind);
+            // Same solid-color/gradient treatment as the desktop stage's own
+            // cascade cards (see the RIGHT column above) — one full-bleed
+            // background with a dark overlay and the icon/index/name/copy
+            // centered on top of it, nothing else, instead of mobile's
+            // earlier split image-strip-plus-white-text-panel layout.
+            return (
               <div
-                className="relative h-[220px] w-full overflow-hidden rounded-2xl border border-line max-[560px]:h-[180px]"
+                className="relative flex h-full w-full flex-col items-center justify-center overflow-hidden rounded-2xl p-8 text-center shadow-[0_20px_44px_-24px_rgba(11,42,74,0.35)]"
                 style={
                   ind.image
                     ? { backgroundImage: `url(${ind.image})`, backgroundSize: "cover", backgroundPosition: "center" }
                     : { background: ind.gradient }
                 }
-                role="img"
-                aria-label={`${ind.name} — illustration`}
               >
-                <span className="absolute left-4 top-4 flex h-10 w-10 items-center justify-center rounded-full border border-white/25 bg-white/10 text-white backdrop-blur-sm">
-                  <IndustryIcon icon={ind.icon} />
-                </span>
+                <div className="absolute inset-0 bg-black/28" />
+                <div className="relative z-[1] flex flex-col items-center">
+                  <span className="mb-4 flex h-12 w-12 items-center justify-center rounded-full border border-white/25 bg-white/10 text-white backdrop-blur-sm">
+                    <IndustryIcon icon={ind.icon} />
+                  </span>
+                  <span className="mb-2 block font-mono text-[11px] font-semibold uppercase tracking-[0.1em] text-[#8fd6c4]">
+                    {String(i + 1).padStart(2, "0")} / {String(INDUSTRIES.length).padStart(2, "0")}
+                  </span>
+                  <h3 className="text-[22px] font-semibold text-white">{ind.name}</h3>
+                  <p className="mt-3 max-w-[34ch] text-[14.5px] leading-[1.6] text-white/85">{ind.copy}</p>
+                </div>
               </div>
-              <div>
-                <span className="font-mono text-xs font-semibold uppercase tracking-[0.14em] text-blue">
-                  Sector {String(i + 1).padStart(2, "0")}
-                </span>
-                <h3 className="mt-2 text-2xl text-navy">{ind.name}</h3>
-                <p className="mt-2.5 text-[15px] leading-[1.6] text-steel">{ind.copy}</p>
-              </div>
-            </Reveal>
-          ))}
+            );
+          }}
+        />
+        {/* Swipe hint: a hand glyph slides between two chevrons, one full
+            cycle each direction, so the motion itself demonstrates the
+            gesture instead of just labelling it. `motion-reduce` freezes it
+            on a plain, centered pair of arrows for anyone who's asked the OS
+            to cut down on animation. */}
+        <div className="mt-5 flex flex-col items-center gap-2">
+          <div className="relative flex h-7 w-20 items-center justify-center text-blue">
+            <svg
+              width="9"
+              height="14"
+              viewBox="0 0 9 14"
+              fill="none"
+              className="absolute left-0 flex-none animate-[swipeHintChevron_1.8s_ease-in-out_infinite] motion-reduce:animate-none"
+              aria-hidden="true"
+            >
+              <path d="M7 1 1 7l6 6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            <svg
+              width="26"
+              height="26"
+              viewBox="0 0 24 24"
+              className="animate-[swipeHintHand_1.8s_ease-in-out_infinite] motion-reduce:animate-none"
+              aria-hidden="true"
+            >
+              <path
+                d="M9 13V6.2a1.3 1.3 0 0 1 2.6 0V11M11.6 10.6V4.6a1.3 1.3 0 0 1 2.6 0V11M14.2 11V6.4a1.3 1.3 0 0 1 2.6 0v6.3M16.8 12.4a1.3 1.3 0 0 1 2.6.1v3.8c0 3.3-2.4 6-6.3 6-3.1 0-4.9-1.3-6-3.1l-2-3.5a1.35 1.35 0 0 1 2.1-1.6l1.4 1.2"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            <svg
+              width="9"
+              height="14"
+              viewBox="0 0 9 14"
+              fill="none"
+              className="absolute right-0 flex-none animate-[swipeHintChevron_1.8s_ease-in-out_infinite] [animation-delay:0.9s] motion-reduce:animate-none"
+              aria-hidden="true"
+            >
+              <path d="M2 1 8 7l-6 6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </div>
+          <span className="font-mono text-[10.5px] font-semibold uppercase tracking-[0.08em] text-blue">
+            Swipe left or right
+          </span>
         </div>
       </div>
     </section>

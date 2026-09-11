@@ -202,6 +202,32 @@
   }
 }
 
+/* Industries' mobile swipe-deck hint (components/Industries.jsx): a small
+ * hand glyph slides side to side between two chevrons — echoing the actual
+ * left/right drag gesture the deck responds to, rather than a static label.
+ * The two chevrons share this same keyframe but are half a cycle out of
+ * phase with each other (via animation-delay), so whichever side the hand
+ * is currently "at" is the one lit up.
+ */
+@keyframes swipeHintHand {
+  0%,
+  100% {
+    transform: translateX(-9px);
+  }
+  50% {
+    transform: translateX(9px);
+  }
+}
+@keyframes swipeHintChevron {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
+}
+
 /*
  * This is a committed single-theme (light) brand design, not a light/dark pair:
  * white base + blue/navy accents throughout, regardless of the visitor's OS

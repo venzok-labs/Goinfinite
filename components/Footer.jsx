@@ -60,8 +60,8 @@ export default function Footer() {
         </div>
       </div>
 
-      <div className="wrap grid grid-cols-[1.2fr_auto_auto_auto] gap-10 py-13 max-[900px]:grid-cols-2 max-[900px]:gap-y-9 max-[560px]:grid-cols-1">
-        <div>
+      <div className="wrap grid grid-cols-[1.2fr_auto_auto_auto] gap-10 py-13 max-[900px]:grid-cols-2 max-[900px]:gap-y-9 max-[560px]:grid-cols-2 max-[560px]:gap-x-6">
+        <div className="max-[560px]:hidden">
           <Logo size={26} />
           <p className="mt-3 max-w-[32ch] text-[13.5px] leading-[1.6] text-steel">
             Engineering Solutions for a Better Tomorrow.
@@ -78,7 +78,10 @@ export default function Footer() {
           <ul className="flex flex-col gap-[11px] whitespace-nowrap">
             {COMPANY_LINKS.map((l) => (
               <li key={l.href}>
-                <Link href={l.href} className="text-sm text-steel no-underline hover:text-blue">
+                <Link
+                  href={l.href}
+                  className="text-sm text-steel no-underline hover:text-blue max-[560px]:text-[11px]"
+                >
                   {l.label}
                 </Link>
               </li>
@@ -93,7 +96,12 @@ export default function Footer() {
           <ul className="flex flex-col gap-[11px]">
             {SERVICE_LINKS.map((l) => (
               <li key={l.href}>
-                <Link href={l.href} className="text-sm text-steel no-underline hover:text-blue">
+                <Link
+                  href={l.href}
+                  className={`text-sm text-steel no-underline hover:text-blue max-[560px]:text-[11px] ${
+                    l.label === "Measurement & Reverse Engineering" ? "" : "max-[560px]:whitespace-nowrap"
+                  }`}
+                >
                   {l.label}
                 </Link>
               </li>
@@ -101,7 +109,7 @@ export default function Footer() {
           </ul>
         </nav>
 
-        <div>
+        <div className="max-[560px]:col-span-2">
           <h4 className="mb-4 font-mono text-[11.5px] font-bold uppercase tracking-[0.06em] text-navy">
             Get in Touch
           </h4>
@@ -153,25 +161,18 @@ export default function Footer() {
 
       <div className="border-t border-line">
         <div className="wrap flex flex-wrap items-center justify-between gap-4 py-5 text-[12.5px] text-steel/70">
-          <span className="font-mono">© {new Date().getFullYear()} Infinite Solutions. All rights reserved.</span>
-          <div className="flex flex-wrap gap-5">
-            {/* Privacy Policy / Terms have no page yet — these are placeholders
-                until those pages exist, so they don't silently 404. */}
+          <span className="font-mono text-[10.5px]">
+            © {new Date().getFullYear()} Infinite Solutions. All rights reserved.
+          </span>
+          <div className="flex flex-wrap gap-5 text-[10px]">
+            {/* Privacy Policy / Terms have no page yet — TODO: link these once
+                those pages exist. */}
             <span className="cursor-not-allowed" title="Page not published yet">
-              Privacy Policy{" "}
-              <span className="ml-1 rounded bg-tint-2 px-1.5 py-0.5 text-[9.5px] font-semibold uppercase tracking-[0.04em] text-blue-dark">
-                page needed
-              </span>
+              Privacy Policy
             </span>
             <span className="cursor-not-allowed" title="Page not published yet">
-              Terms of Service{" "}
-              <span className="ml-1 rounded bg-tint-2 px-1.5 py-0.5 text-[9.5px] font-semibold uppercase tracking-[0.04em] text-blue-dark">
-                page needed
-              </span>
+              Terms of Service
             </span>
-            <Link href="/services" className="no-underline hover:text-blue">
-              Sitemap
-            </Link>
           </div>
         </div>
       </div>

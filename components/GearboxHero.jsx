@@ -421,8 +421,19 @@ export default function GearboxHero() {
       ref={containerRef}
       className="relative mx-auto h-full min-h-[420px] w-full max-w-[78%] max-[900px]:min-h-[300px] max-[900px]:max-w-full"
     >
+      {/* `absolute inset-0` (not an in-flow `h-full w-full`) is load-bearing:
+          this container's own height on desktop comes from the hero grid
+          row's auto height, not a fixed value, so it isn't "definite" in CSS
+          terms. An in-flow canvas with only a percentage height falls back
+          to its *intrinsic* size instead — the width/height attributes
+          `renderer.setSize` writes below, scaled by devicePixelRatio — which
+          fed back into this container's own height. Every ResizeObserver
+          firing (e.g. opening/closing DevTools) nudged that intrinsic size
+          up, and the container grew a little more each time and never
+          shrank back. Taking the canvas out of flow breaks the loop: it can
+          never contribute to this container's height, only the reverse. */}
       {!failed && (
-        <canvas ref={canvasRef} className="block !h-full !w-full outline-none" />
+        <canvas ref={canvasRef} className="absolute inset-0 block h-full w-full outline-none" />
       )}
       {failed && (
         <div className="absolute inset-0 flex items-center justify-center opacity-90">
